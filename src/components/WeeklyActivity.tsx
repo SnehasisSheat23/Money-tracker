@@ -18,13 +18,31 @@ interface TooltipProps {
   payload?: any[];
   label?: string;
 }
+const WEEKLY_DATA: WeeklyData[] = [
+  { day: 'Mon', deposit: 320, withdraw: 260, total: 580 },
+  { day: 'Tue', deposit: 480, withdraw: 360, total: 840 },
+  { day: 'Wed', deposit: 160, withdraw: 240, total: 400 },
+  { day: 'Thu', deposit: 350, withdraw: 240, total: 590 },
+  { day: 'Fri', deposit: 380, withdraw: 320, total: 700 },
+  { day: 'Sat', deposit: 450, withdraw: 250, total: 700 },
+  { day: 'Sun', deposit: 350, withdraw: 120, total: 470 }
+];
+
+// Calculate dynamic ticks based on data
+const calculateYAxisTicks = (data: WeeklyData[]) => {
+  const maxValue = Math.max(...data.map(item => Math.max(item.deposit, item.withdraw)));
+  const tickCount = 5; // Number of ticks you want
+  const roundedMax = Math.ceil(maxValue / 100) * 100; // Round to nearest hundred
+  const interval = roundedMax / (tickCount - 1);
+  return Array.from({ length: tickCount }, (_, i) => i * interval);
+};
 
 // Constants
 const CHART_CONFIG = {
   margins: { top: 10, right: 10, left: 0, bottom: 5 },
   barMaxSize: 32,
-  barGap: 4,
-  barCategoryGap: '35%',
+  barGap: 3,
+  barCategoryGap: '25%',
   animationDuration: 800,
   colors: {
     deposit: {
@@ -36,18 +54,10 @@ const CHART_CONFIG = {
       end: 'rgba(244, 114, 182, 0.7)'   // pink-500
     }
   },
-  yAxisTicks: [0, 200, 400, 600]
+  yAxisTicks: calculateYAxisTicks(WEEKLY_DATA)
 };
 
-const WEEKLY_DATA: WeeklyData[] = [
-  { day: 'Mon', deposit: 320, withdraw: 260, total: 580 },
-  { day: 'Tue', deposit: 480, withdraw: 360, total: 840 },
-  { day: 'Wed', deposit: 160, withdraw: 240, total: 400 },
-  { day: 'Thu', deposit: 350, withdraw: 240, total: 590 },
-  { day: 'Fri', deposit: 380, withdraw: 320, total: 700 },
-  { day: 'Sat', deposit: 450, withdraw: 250, total: 700 },
-  { day: 'Sun', deposit: 350, withdraw: 120, total: 470 }
-];
+
 
 const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (!active || !payload?.length) return null;
@@ -112,7 +122,7 @@ export function WeeklyActivity() {
     <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
       <div className="flex flex-col gap-4 mb-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <h2 className="text-lg font-semibold text-gray-800">Weekly Activity</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Weekly Activity</h2>
           <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none">
             <option>This Week</option>
             <option>Last Week</option>

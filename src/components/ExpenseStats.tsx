@@ -146,7 +146,7 @@ export function ExpenseStats() {
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">Expense Statistics</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Expense Statistics</h2>
         <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none">
           <option>This Month</option>
           <option>Last Month</option>

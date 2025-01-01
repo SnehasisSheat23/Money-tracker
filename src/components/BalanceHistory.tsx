@@ -38,7 +38,7 @@ export function BalanceHistory() {
 
   return (
     <div className="bg-white p-6 rounded-xl">
-      <h2 className="text-xl font-semibold mb-6">Balance History</h2>
+      <h2 className="text-xl font-semibold mb-6 text-gray-800">Balance History</h2>
       
       <div className="relative h-64">
         <svg

@@ -26,8 +26,9 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
             key={dateKey}
             date={new Date(dateKey)}
             expenses={expenses}
-            totalAmount={totalAmount}
-          />
+            totalAmount={totalAmount} onAddExpense={function (date: Date): void {
+              throw new Error('Function not implemented.');
+            } }          />
         );
       })}
     </div>

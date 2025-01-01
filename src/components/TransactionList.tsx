@@ -87,7 +87,7 @@ export function TransactionList() {
   return (
     <div className="bg-white p-6 rounded-xl">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Recent Transaction</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Recent Transaction</h2>
         <button className="text-blue-600 font-medium">See All</button>
       </div>
       
