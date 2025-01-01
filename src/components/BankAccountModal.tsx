@@ -74,7 +74,7 @@ export function BankAccountModal({ isOpen, onClose, onSave, initialData }: BankA
           />
           
           {/* Modal Container */}
-          <div className="fixed inset-0 z-[70] flex items-center justify-center">
+          <div className="fixed inset-0 z-[70] flex items-center justify-center ">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

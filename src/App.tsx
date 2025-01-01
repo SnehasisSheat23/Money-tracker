@@ -64,14 +64,14 @@ function App() {
     {
       type: 'balance',
       amount: "3,450",
-      title: "Remaining Balance",
-      variant: "blue"
+      title: "Total Expenses",
+      variant: "red"
     },
     {
       type: 'balance',
       amount: "890",
-      title: "Due Amount",
-      variant: "red"
+      title: "Total Income",
+      variant: "blue"
     }
   ]);
 
@@ -180,9 +180,9 @@ function App() {
                               </div>
 
                               {/* Bank Account Cards - Updated with scroll buttons */}
-                              <div className="mb-3 md:mb-4">
+                              <div className="mb-3 md:mb-4 ">
                                 <div className="flex items-center justify-between mb-3 md:mb-4">
-                                  <h2 className="text-base md:text-lg font-semibold text-gray-800">
+                                  <h2 className="text-base md:text-lg font-semibold text-gray-800 pl-3">
                                     Bank Accounts
                                   </h2>
                                   <select className="text-xs md:text-sm border border-gray-200 rounded-lg px-2 py-1 md:px-3 md:py-1.5 bg-white">
@@ -193,12 +193,12 @@ function App() {
                                   </select>
                                 </div>
                                 {/* Scroll container with buttons */}
-                                <div className="relative">
+                                <div className="relative ">
                                   <div 
                                     ref={scrollContainerRef}
                                     className="overflow-x-auto pb-2 scrollbar-hide"
                                   >
-                                    <div className="flex gap-3 md:gap-4">
+                                    <div className="flex gap-3 md:gap-4 p-2">
                                     {bankCards.map((card, index) => (
                                       <div key={`bank-${index}`} className="flex-none w-[160px] sm:w-[200px] md:w-[300px]">
                                         <Card 
