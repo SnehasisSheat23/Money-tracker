@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom utilities */
+@layer utilities {
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #e2e8f0;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #cbd5e1;
+  }
+}
+
+/* Global styles */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Transitions */
+.transition-all-ease {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Add responsive container padding */
+.container-padding {
+  @apply px-4 md:px-6 lg:px-8;
+}
+
+/* Responsive typography */
+.responsive-text {
+  @apply text-base md:text-lg lg:text-xl;
+}
+
+@layer components {
+  .section-heading {
+    @apply text-lg font-semibold text-gray-800 flex items-center gap-2;
+  }
+  
+  .section-subheading {
+    @apply text-sm font-medium text-gray-500;
+  }
+
+  .section-container {
+    @apply bg-white p-6 rounded-2xl border border-gray-100 shadow-sm;
+  }
+}
