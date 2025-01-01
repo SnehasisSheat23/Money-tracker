@@ -97,6 +97,25 @@ html {
   @apply text-base md:text-lg lg:text-xl;
 }
 
+/* Mobile safe area utilities */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Fixed header support */
+@supports(padding: max(0px)) {
+  .fixed-header {
+    padding-top: max(env(safe-area-inset-top), 16px);
+  }
+}
+
+/* Prevent content from going under the fixed header on mobile */
+@media (max-width: 768px) {
+  .has-fixed-header {
+    padding-top: calc(60px + env(safe-area-inset-top, 0px));
+  }
+}
+
 @layer components {
   .section-heading {
     @apply text-lg font-semibold text-gray-800 flex items-center gap-2;

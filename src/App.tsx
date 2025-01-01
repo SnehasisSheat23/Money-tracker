@@ -146,9 +146,10 @@ function App() {
             </div>
             
             {/* Main Layout */}
-            <div className="flex-1 flex flex-col h-screen overflow-hidden">
-              {/* Update Header with sticky positioning */}
-              <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+            <div className="flex-1 flex flex-col h-screen w-full overflow-hidden">
+              {/* Updated Header container */}
+              <div className="fixed top-0 left-0 right-0 md:relative z-50 bg-white border-b border-gray-200 shadow-sm">
+                <div className="safe-area-top" />
                 <Header>
                   <button 
                     className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -159,8 +160,8 @@ function App() {
                 </Header>
               </div>
               
-              {/* Main Content - adjust padding-top to prevent content from going under header */}
-              <main className="flex-1 overflow-y-auto scroll-smooth overscroll-y-contain">
+              {/* Update main content to account for fixed header */}
+              <main className="flex-1 overflow-y-auto scroll-smooth overscroll-y-contain mt-[60px] md:mt-0">
                 <Routes>
                   <Route path="/" element={
                     <div className="p-3 md:p-6 lg:p-8">
@@ -278,8 +279,5 @@ function App() {
         onSave={handleSaveBank}
         initialData={selectedBank || undefined}
       />
-    </BrowserRouter>
-  );
-}
-
+    </BrowserRouter>  );}
 export default App;
