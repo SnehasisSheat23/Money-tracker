@@ -147,16 +147,19 @@ function App() {
             
             {/* Main Layout */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-              <Header >
-                <button 
-                  className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                >
-                  <Menu className="w-6 h-6" />
-                </button>
-              </Header>
+              {/* Update Header with sticky positioning */}
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+                <Header>
+                  <button 
+                    className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                  >
+                    <Menu className="w-6 h-6" />
+                  </button>
+                </Header>
+              </div>
               
-              {/* Main Content */}
+              {/* Main Content - adjust padding-top to prevent content from going under header */}
               <main className="flex-1 overflow-y-auto scroll-smooth overscroll-y-contain">
                 <Routes>
                   <Route path="/" element={

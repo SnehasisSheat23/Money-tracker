@@ -2,11 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Search, Bell, Settings, X } from 'lucide-react';
 
 interface HeaderProps {
-  
   children?: React.ReactNode;
 }
 
-export function Header({ children }: HeaderProps) {
+export const Header: React.FC<HeaderProps> = ({ children }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
@@ -16,72 +15,69 @@ export function Header({ children }: HeaderProps) {
   };
 
   return (
-    <>
-      <header className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 bg-white border-b">
-        <div className="flex items-center space-x-3">
-          {children}
-          <h1 className="text-xl font-semibold text-gray-800">Overview</h1>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Ask any thing"
-              value={inputValue}
-              onChange={handleInputChange}
-              className="pl-9 pr-4 py-1.5 bg-gray-50 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-            
-            {/* Dropdown Chat Interface */}
-            {isTyping && (
-              <div className="absolute mt-2 w-96 bg-white rounded-lg shadow-lg border overflow-hidden transform origin-top transition-all duration-200 ease-out animate-slide-up">
-                <div className="p-3 border-b flex justify-between items-center">
-                  <h2 className="text-sm font-semibold text-gray-700">AI Assistant</h2>
-                  <button 
-                    onClick={() => {setIsTyping(false); setInputValue('')}}
-                    className="p-1 hover:bg-gray-100 rounded-full"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="p-4 h-64 overflow-y-auto">
-                  <div className="flex items-start space-x-3 animate-pulse">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex-shrink-0"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    </div>
+    <header className="px-4 py-3 md:px-6 md:py-4 flex items-center justify-between bg-white">
+      <div className="flex items-center gap-4">
+        {children}
+        <h1 className="text-lg font-semibold text-gray-800">Money Tracker</h1>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="relative hidden md:block">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Ask any thing"
+            value={inputValue}
+            onChange={handleInputChange}
+            className="pl-9 pr-4 py-1.5 bg-gray-50 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          />
+          
+          {/* Dropdown Chat Interface */}
+          {isTyping && (
+            <div className="absolute mt-2 w-96 bg-white rounded-lg shadow-lg border overflow-hidden transform origin-top transition-all duration-200 ease-out animate-slide-up">
+              <div className="p-3 border-b flex justify-between items-center">
+                <h2 className="text-sm font-semibold text-gray-700">AI Assistant</h2>
+                <button 
+                  onClick={() => {setIsTyping(false); setInputValue('')}}
+                  className="p-1 hover:bg-gray-100 rounded-full"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-4 h-64 overflow-y-auto">
+                <div className="flex items-start space-x-3 animate-pulse">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex-shrink-0"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                   </div>
                 </div>
-                <div className="p-3 border-t bg-gray-50">
-                  <input
-                    type="text"
-                    placeholder="Type your message..."
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
               </div>
-            )}
-          </div>
-          
-          <button className="p-2 hover:bg-gray-100 rounded-full">
-            <Settings className="w-5 h-5 text-gray-600" />
-          </button>
-          
-          <button className="p-1.5 hover:bg-gray-100 rounded-full relative">
-            <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-          </button>
-          
-          <img
-            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&q=80"
-            alt="Profile"
-            className="w-8 h-8 rounded-full"
-          />
+              <div className="p-3 border-t bg-gray-50">
+                <input
+                  type="text"
+                  placeholder="Type your message..."
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
         </div>
-      </header>
-    </>
+        
+        <button className="p-2 hover:bg-gray-100 rounded-full">
+          <Settings className="w-5 h-5 text-gray-600" />
+        </button>
+        
+        <button className="p-1.5 hover:bg-gray-100 rounded-full relative">
+          <Bell className="w-5 h-5 text-gray-600" />
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+        </button>
+        
+        <img
+          src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&q=80"
+          alt="Profile"
+          className="w-8 h-8 rounded-full"
+        />
+      </div>
+    </header>
   );
-}
+};
