@@ -157,7 +157,7 @@ function App() {
               </Header>
               
               {/* Main Content */}
-              <main className="flex-1 overflow-y-auto">
+              <main className="flex-1 overflow-y-auto scroll-smooth overscroll-y-contain">
                 <Routes>
                   <Route path="/" element={
                     <div className="p-3 md:p-6 lg:p-8">
@@ -196,11 +196,15 @@ function App() {
                                 <div className="relative ">
                                   <div 
                                     ref={scrollContainerRef}
-                                    className="overflow-x-auto pb-2 scrollbar-hide"
+                                    className="overflow-x-auto pb-2 scrollbar-hide scroll-smooth overscroll-x-contain touch-pan-x"
+                                    style={{
+                                      WebkitOverflowScrolling: 'touch',
+                                      scrollSnapType: 'x mandatory'
+                                    }}
                                   >
                                     <div className="flex gap-3 md:gap-4 p-2">
                                     {bankCards.map((card, index) => (
-                                      <div key={`bank-${index}`} className="flex-none w-[160px] sm:w-[200px] md:w-[300px]">
+                                      <div key={`bank-${index}`} className="flex-none w-[160px] sm:w-[200px] md:w-[300px] scroll-snap-align-start">
                                         <Card 
                                           {...card} 
                                           onClick={() => setSelectedBank(card)} 
@@ -230,7 +234,7 @@ function App() {
                             </div>
                             
                             {/* Charts Section */}
-                            <div className="grid grid-cols-1 lg:grid-cols-8 gap-3 md:gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-8 gap-3 md:gap-6 overflow-hidden">
                               <div className="lg:col-span-4">
                                 <WeeklyActivity />
                               </div>

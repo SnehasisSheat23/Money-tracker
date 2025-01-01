@@ -110,3 +110,13 @@ html {
     @apply bg-white p-6 rounded-2xl border border-gray-100 shadow-sm;
   }
 }
+
+/* Better touch scrolling on iOS */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Smooth snap scrolling */
+.scroll-snap-align-start {
+  scroll-snap-align: start;
+}
