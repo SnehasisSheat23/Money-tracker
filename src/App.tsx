@@ -1,5 +1,5 @@
 // Core imports
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Menu } from 'lucide-react';
 import './styles/global.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -16,6 +16,8 @@ import { BalanceHistory } from './components/BalanceHistory';
 import { AddCard } from './components/AddCard';
 import { mockCategories } from './Transactions/data/mockCategories';
 import { BankAccountModal } from './components/BankAccountModal';
+import { BalanceCard } from './components/BalanceCard';
+import { ScrollButton } from './components/ScrollButton';
 
 // Updated Card Data types
 interface BalanceCardData {
@@ -69,6 +71,7 @@ function App() {
   ]);
 
   const [selectedBank, setSelectedBank] = useState<BankCardData | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleAddBankCard = () => {
     // Instead of directly adding a card, we'll set selectedBank to a new empty card
@@ -103,6 +106,13 @@ function App() {
     setSelectedBank(null);
   };
 
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -200 : 200;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   return (
     <BrowserRouter>
       <div className="flex h-screen bg-gray-50">
@@ -134,50 +144,77 @@ function App() {
           <main className="flex-1 overflow-y-auto">
             <Routes>
               <Route path="/" element={
-                <div className="p-4 md:p-6 lg:p-8">
+                <div className="p-3 md:p-6 lg:p-8">
                   <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 md:gap-6">
                       {/* Left Section */}
-                      <div className="xl:col-span-2 space-y-4 md:space-y-6">
+                      <div className="xl:col-span-2 space-y-3 md:space-y-6">
                         {/* Cards Section */}
                         <div className="bg-transparent rounded-2xl">
-                          <div className="flex justify-between items-center mb-4 md:mb-6 px-2">
-                            
+                          {/* Balance Cards */}
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
+                            {balanceCards.map((card, index) => (
+                              <BalanceCard 
+                                key={`balance-${index}`}
+                                amount={card.amount}
+                                title={card.title}
+                                variant={card.variant}
+                              />
+                            ))}
                           </div>
-                          
-                          <div className="bg-transparent rounded-2xl">
-                            {/* Balance Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                              {balanceCards.map((card, index) => (
-                                <Card key={`balance-${index}`} {...card} />
-                              ))}
-                            </div>
 
-                            {/* Bank Account Cards */}
-                            <div className="mb-4">
-                              <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-gray-800">Bank Accounts</h2>
-                                <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
-                                  <option>All Accounts</option>
-                                  <option>Savings</option>
-                                  <option>Checking</option>
-                                  <option>Credit Cards</option>
-                                </select>
-                              </div>
-                              <div className="relative">
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                  {bankCards.map((card, index) => (
-                                    <Card key={`bank-${index}`} {...card} onClick={() => setSelectedBank(card)} />
+                          {/* Bank Account Cards - Updated with scroll buttons */}
+                          <div className="mb-3 md:mb-4">
+                            <div className="flex items-center justify-between mb-3 md:mb-4">
+                              <h2 className="text-base md:text-lg font-semibold text-gray-800">
+                                Bank Accounts
+                              </h2>
+                              <select className="text-xs md:text-sm border border-gray-200 rounded-lg px-2 py-1 md:px-3 md:py-1.5 bg-white">
+                                <option>All Accounts</option>
+                                <option>Savings</option>
+                                <option>Checking</option>
+                                <option>Credit Cards</option>
+                              </select>
+                            </div>
+                            {/* Scroll container with buttons */}
+                            <div className="relative">
+                              <div 
+                                ref={scrollContainerRef}
+                                className="overflow-x-auto pb-2 scrollbar-hide"
+                              >
+                                <div className="flex gap-3 md:gap-4">
+      {bankCards.map((card, index) => (
+        <div key={`bank-${index}`} className="flex-none w-[160px] sm:w-[200px] md:w-[300px]">
+          <Card 
+            {...card} 
+            onClick={() => setSelectedBank(card)} 
+          />
+        </div>
                                   ))}
-                                  <AddCard onClick={handleAddBankCard} />
+                                  <div className="flex-none w-[160px] sm:w-[200px] md:w-full">
+                                    <AddCard onClick={handleAddBankCard} />
+                                  </div>
                                 </div>
                               </div>
+                              {/* Scroll Buttons */}
+                              {bankCards.length > 2 && (
+                                <>
+                                  <ScrollButton 
+                                    direction="left" 
+                                    onClick={() => handleScroll('left')} 
+                                  />
+                                  <ScrollButton 
+                                    direction="right" 
+                                    onClick={() => handleScroll('right')} 
+                                  />
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
                         
                         {/* Charts Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 md:gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-7 gap-3 md:gap-6">
                           <div className="lg:col-span-4">
                             <WeeklyActivity />
                           </div>
@@ -188,7 +225,7 @@ function App() {
                       </div>
                       
                       {/* Right Section */}
-                      <div className="space-y-4 md:space-y-6">
+                      <div className="space-y-3 md:space-y-6">
                         <TransactionList />
                         <BalanceHistory />
                       </div>
