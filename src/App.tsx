@@ -1,10 +1,14 @@
+// ============= Imports =============
 // Core imports
 import { useState, useRef } from 'react';
 import { Menu } from 'lucide-react';
-import './styles/global.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './styles/global.css';
+
+// Page imports
 import { TransactionsPage } from './pages/TransactionsPage';
 import { TransactionPage } from './Transactions/pages/TransactionPage';
+
 // Component imports
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -14,18 +18,21 @@ import { WeeklyActivity } from './components/WeeklyActivity';
 import { ExpenseStats } from './components/ExpenseStats';
 import { BalanceHistory } from './components/BalanceHistory';
 import { AddCard } from './components/AddCard';
-import { mockCategories } from './Transactions/data/mockCategories';
 import { BankAccountModal } from './components/BankAccountModal';
 import { BalanceCard } from './components/BalanceCard';
 import { ScrollButton } from './components/ScrollButton';
 
-// Updated Card Data types
+// Data imports
+import { mockCategories } from './Transactions/data/mockCategories';
+
+// ============= Types =============
 interface BalanceCardData {
   type: 'balance';
   amount: string;
   title: string;
   variant: 'green' | 'blue' | 'red';
 }
+
 
 interface BankCardData {
   type: 'bank';
@@ -37,8 +44,13 @@ interface BankCardData {
 
 type CardData = BalanceCardData | BankCardData;
 
+// ============= Component =============
 function App() {
+  // ===== State Hooks =====
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedBank, setSelectedBank] = useState<BankCardData | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   const [balanceCards] = useState<BalanceCardData[]>([
     {
       type: 'balance',
@@ -70,11 +82,8 @@ function App() {
     }
   ]);
 
-  const [selectedBank, setSelectedBank] = useState<BankCardData | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
+  // ===== Event Handlers =====
   const handleAddBankCard = () => {
-    // Instead of directly adding a card, we'll set selectedBank to a new empty card
     setSelectedBank({
       type: 'bank',
       bankName: '',
@@ -95,12 +104,10 @@ function App() {
     };
 
     if (selectedBank?.bankName) {
-      // Editing existing card
       setBankCards(cards => cards.map(card =>
         card === selectedBank ? updatedCard : card
       ));
     } else {
-      // Adding new card
       setBankCards(prev => [...prev, updatedCard]);
     }
     setSelectedBank(null);
@@ -113,6 +120,7 @@ function App() {
     }
   };
 
+  // ===== Render =====
   return (
     <BrowserRouter>
       <div className="flex h-screen bg-gray-50">
@@ -131,7 +139,7 @@ function App() {
         
         {/* Main Layout */}
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          <Header>
+          <Header >
             <button 
               className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -183,13 +191,13 @@ function App() {
                                 className="overflow-x-auto pb-2 scrollbar-hide"
                               >
                                 <div className="flex gap-3 md:gap-4">
-      {bankCards.map((card, index) => (
-        <div key={`bank-${index}`} className="flex-none w-[160px] sm:w-[200px] md:w-[300px]">
-          <Card 
-            {...card} 
-            onClick={() => setSelectedBank(card)} 
-          />
-        </div>
+                                {bankCards.map((card, index) => (
+                                  <div key={`bank-${index}`} className="flex-none w-[160px] sm:w-[200px] md:w-[300px]">
+                                    <Card 
+                                      {...card} 
+                                      onClick={() => setSelectedBank(card)} 
+                                    />
+                                  </div>
                                   ))}
                                   <div className="flex-none w-[160px] sm:w-[200px] md:w-full">
                                     <AddCard onClick={handleAddBankCard} />
@@ -214,11 +222,11 @@ function App() {
                         </div>
                         
                         {/* Charts Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-7 gap-3 md:gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-8 gap-3 md:gap-6">
                           <div className="lg:col-span-4">
                             <WeeklyActivity />
                           </div>
-                          <div className="lg:col-span-3">
+                          <div className="lg:col-span-4">
                             <ExpenseStats />
                           </div>
                         </div>

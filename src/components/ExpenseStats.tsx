@@ -155,7 +155,7 @@ export function ExpenseStats() {
       </div>
       
       <div className="flex flex-col items-center">
-        <div className="relative w-full max-w-[300px] h-[300px] mb-6">
+        <div className="relative w-full max-w-[300px] h-[300px] lg:max-w-[270px] lg:h-[270px] mb-6">
           <Pie data={data} options={options} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-sm text-gray-500 mb-1">Total Spent</span>
