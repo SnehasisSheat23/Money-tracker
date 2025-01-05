@@ -23,10 +23,10 @@ export function Sidebar({ onClose }: SidebarProps) {
   const location = useLocation();
 
   return (
-    <div className="w-64 bg-white h-screen overflow-y-auto">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-blue-600 flex items-center">
+    <div className="w-64 bg-white h-screen overflow-y-auto shadow-lg">
+      <div className="p-4 md:p-6">
+        <div className="flex items-center justify-between mb-6 md:mb-8">
+          <h1 className="text-xl md:text-2xl font-bold text-blue-600 flex items-center">
             <CreditCard className="mr-2" />
             Moneytrack.
           </h1>
@@ -42,8 +42,8 @@ export function Sidebar({ onClose }: SidebarProps) {
           <Link 
             icon={<Home />} 
             label="Dashboard" 
-            active={location.pathname === '/'} 
-            onClick={() => navigate('/')}
+            active={location.pathname === '/dashboard'} 
+            onClick={() => navigate('/dashboard')}
           />
           <Link 
             icon={<Receipt />} 

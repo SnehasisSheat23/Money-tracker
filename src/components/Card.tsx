@@ -29,6 +29,14 @@ export function Card({ bankName, accountType, balance, variant, onClick }: BankC
     <motion.div
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        type: "spring",
+        stiffness: 500,
+        damping: 30,
+        duration: 0.3
+      }}
       onClick={onClick}
       className={`relative rounded-xl p-3 sm:p-5 border shadow-sm ${variantStyles[variant]} 
         cursor-pointer transition-all duration-300 hover:shadow-md h-[120px] sm:h-[160px] min-w-[130px]`}

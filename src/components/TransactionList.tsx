@@ -11,6 +11,8 @@ import '../styles/global.css'
 import { Modal } from './ui/Popup';
 import { nanoid } from 'nanoid';
 import { AddTransaction } from './ui/addtransaction';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LoadingAnimation } from './ui/LoadingAnimation';
 
 interface Transaction {
   id: string;
@@ -35,6 +37,7 @@ export function TransactionList() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [swipeProgress, setSwipeProgress] = useState(0);
   const [swipedId, setSwipedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const swipeThreshold = 80; // pixels needed to trigger delete
 
   // Add check for mobile devices
@@ -46,6 +49,11 @@ export function TransactionList() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Flatten transactions for display
@@ -131,7 +139,13 @@ export function TransactionList() {
   };
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm relative">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="bg-white p-4 md:p-6 rounded-xl shadow-sm relative"
+    >
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-800">Recent Transactions</h2>
         <div className="flex gap-2 pr-2">
@@ -147,78 +161,88 @@ export function TransactionList() {
           </button>
         </div>
       </div>
-      
-      <div className={`space-y-2 overflow-y-auto pr-3 
-        scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent
-        hover:scrollbar-thumb-gray-300
-        ${isMobile ? 'h-[calc(100vh-20rem)]' : 'h-[calc(100vh-36rem)]'}`}>
-        {allTransactions.map((transaction) => !deletedIds.includes(transaction.id) && (
-          <div 
-            key={transaction.id}
-            className="relative overflow-hidden rounded-lg"
-            onTouchStart={(e) => handleTouchStart(e, transaction.id)}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            {/* Delete button background - mobile only */}
-            {isMobile && swipedId === transaction.id && (
-              <div 
-                className="absolute inset-y-0 right-0 flex items-center justify-end bg-red-500 text-white"
-                style={{
-                  width: `${swipeProgress}px`,
-                  opacity: swipeProgress / swipeThreshold,
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div className="flex items-center px-4">
-                  <Trash2 className="w-5 h-5" />
-                </div>
-              </div>
-            )}
 
-            {/* Transaction item */}
-            <div 
-              style={{
-                transform: isMobile && swipedId === transaction.id 
-                  ? `translateX(-${swipeProgress}px)`
-                  : 'translateX(0)',
-                transition: 'transform 0.2s ease'
-              }}
-              className="bg-white group flex items-center justify-between p-2 hover:bg-gray-50 transition-colors"
-              onMouseEnter={() => !isMobile && setShowDeleteId(transaction.id)}
-              onMouseLeave={() => !isMobile && setShowDeleteId(null)}
-            >
-              <div className="flex items-center flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center
-                  bg-${transaction.category.color}-50 text-${transaction.category.color}-600`}>
-                  {getCategoryIcon(transaction.category.icon)}
-                </div>
-                <div className="ml-4 flex-1">
-                  <p className="font-medium text-gray-900">{transaction.description}</p>
-                  <p className="text-sm text-gray-800">
-                    {transaction.date.toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </p>
-                </div>
-                <p className="font-medium mx-4 text-gray-900">
-                  {formatCurrency(transaction.amount)}
-                </p>
-                {showDeleteId === transaction.id && !isMobile && (
-                  <button 
-                    onClick={() => setDeleteConfirm(transaction.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"
+      {isLoading ? (
+        <LoadingAnimation />
+      ) : (
+        <AnimatePresence mode="popLayout">
+          <div className={`space-y-2 overflow-y-auto pr-3 
+            scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent
+            hover:scrollbar-thumb-gray-300
+            ${isMobile ? 'h-[calc(100vh-20rem)]' : 'h-[calc(100vh-36rem)]'}`}>
+            {allTransactions.map((transaction) => !deletedIds.includes(transaction.id) && (
+              <motion.div
+                key={transaction.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="relative overflow-hidden rounded-lg"
+                onTouchStart={(e) => handleTouchStart(e, transaction.id)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
+                {/* Delete button background - mobile only */}
+                {isMobile && swipedId === transaction.id && (
+                  <div 
+                    className="absolute inset-y-0 right-0 flex items-center justify-end bg-red-500 text-white"
+                    style={{
+                      width: `${swipeProgress}px`,
+                      opacity: swipeProgress / swipeThreshold,
+                      transition: 'all 0.2s ease'
+                    }}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <div className="flex items-center px-4">
+                      <Trash2 className="w-5 h-5" />
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
+
+                {/* Transaction item */}
+                <div 
+                  style={{
+                    transform: isMobile && swipedId === transaction.id 
+                      ? `translateX(-${swipeProgress}px)`
+                      : 'translateX(0)',
+                    transition: 'transform 0.2s ease'
+                  }}
+                  className="bg-white group flex items-center justify-between p-2 hover:bg-gray-50 transition-colors"
+                  onMouseEnter={() => !isMobile && setShowDeleteId(transaction.id)}
+                  onMouseLeave={() => !isMobile && setShowDeleteId(null)}
+                >
+                  <div className="flex items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center
+                      bg-${transaction.category.color}-50 text-${transaction.category.color}-600`}>
+                      {getCategoryIcon(transaction.category.icon)}
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <p className="font-medium text-gray-900">{transaction.description}</p>
+                      <p className="text-sm text-gray-800">
+                        {transaction.date.toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <p className="font-medium mx-4 text-gray-900">
+                      {formatCurrency(transaction.amount)}
+                    </p>
+                    {showDeleteId === transaction.id && !isMobile && (
+                      <button 
+                        onClick={() => setDeleteConfirm(transaction.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
-        ))}
-      </div>
+        </AnimatePresence>
+      )}
 
       <Modal
         isOpen={!!deleteConfirm}
@@ -305,6 +329,6 @@ export function TransactionList() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
