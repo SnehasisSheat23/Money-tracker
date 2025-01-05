@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // Page imports
 import { TransactionsPage } from './pages/TransactionsPage';
-import { TransactionPage } from './Transactions/pages/TransactionPage';
+import { TransactionPage } from './Transactions/pages/FullTransactionPage';
 import { LandingPage } from './pages/Landing/LandingPage';
 import { PhoneAuth } from './pages/Landing/PhonAuth';
 import { OTPVerification } from './pages/Landing/OTPVerification';
