@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 import { CategoryGrid } from '../Transactions/CategoryGrid.tsx';
@@ -7,10 +7,28 @@ import { ViewSelector } from '../Transactions/ViewSelector';
 import { ViewMode } from '../Transactions/types/expense';
 import { mockCategories } from '../Transactions/data/mockCategories';
 import { mockExpenses } from '../Transactions/data/mockExpenses';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CategorySelector } from '../Transactions/Categoryselector';
 
 export const TransactionsPage: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewMode>('Daily');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollPosition = container.scrollTop;
+      setShowCategorySelector(scrollPosition > 50);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -24,7 +42,7 @@ export const TransactionsPage: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col w-full md:w-[calc(100%-16rem)]">
+      <main className="flex-1 flex flex-col w-full md:w-[calc(100%-16rem)] relative">
         <Header>
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -46,7 +64,29 @@ export const TransactionsPage: React.FC = () => {
           </button>
         </Header>
 
-        <div className="flex-1 overflow-auto p-4 md:p-8">
+        {/* Floating Category Selector */}
+        <AnimatePresence>
+          {showCategorySelector && (
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="sticky top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm px-4"
+            >
+              <CategorySelector
+                categories={mockCategories}
+                selectedCategory={selectedCategoryId}
+                onSelectCategory={setSelectedCategoryId}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div 
+          ref={containerRef}
+          className="flex-1 overflow-auto p-4 md:p-8 scroll-smooth"
+        >
           <div className="max-w-7xl mx-auto space-y-6">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
               Expense Tracker
