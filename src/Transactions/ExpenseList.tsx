@@ -1,14 +1,15 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Expense } from './types/expense';
+import { Expense } from '../data/types/expense';
 import { ExpenseGroup } from './ExpenseGroup';
+import { mockTransactions } from '../data/mockTransactions';
 
-interface ExpenseListProps {
-  expenses: Expense[];
-}
+export const ExpenseList: React.FC = () => {
+  // Flatten and combine all transactions
+  const allExpenses = Object.values(mockTransactions).flat();
 
-export const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
-  const groupedExpenses = expenses.reduce((groups: { [key: string]: Expense[] }, expense) => {
+  // Group expenses by date
+  const groupedExpenses = allExpenses.reduce((groups: { [key: string]: Expense[] }, expense) => {
     const dateKey = format(expense.date, 'yyyy-MM-dd');
     if (!groups[dateKey]) {
       groups[dateKey] = [];
@@ -17,19 +18,26 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
     return groups;
   }, {});
 
+  const handleAddExpense = (date: Date, expenseData: Partial<Expense>) => {
+    // Add your expense creation logic here
+    console.log('New expense:', { date, ...expenseData });
+  };
+
   return (
     <div>
-      {Object.entries(groupedExpenses).map(([dateKey, expenses]) => {
-        const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-        return (
-          <ExpenseGroup
-            key={dateKey}
-            date={new Date(dateKey)}
-            expenses={expenses}
-            totalAmount={totalAmount} onAddExpense={function (date: Date): void {
-              throw new Error('Function not implemented.');
-            } }          />
-        );
+      {Object.entries(groupedExpenses)
+        .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+        .map(([dateKey, expenses]) => {
+          const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+          return (
+            <ExpenseGroup
+              key={dateKey}
+              date={new Date(dateKey)}
+              expenses={expenses}
+              totalAmount={totalAmount}
+              onAddExpense={handleAddExpense}
+            />
+          );
       })}
     </div>
   );

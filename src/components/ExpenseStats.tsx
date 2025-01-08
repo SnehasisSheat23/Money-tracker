@@ -2,43 +2,16 @@ import React from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-
+import { piecharttheme } from '../data/utils/colors';
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
-
 const expenses = [
-  { 
-    category: 'Entertainment',
-    percentage: 30,
-    gradient: {
-      start: 'rgba(79, 70, 229, 0.9)',  // indigo-600
-      end: 'rgba(99, 102, 241, 0.9)'    // indigo-500
-    }
-  },
-  { 
-    category: 'Bills',
-    percentage: 15,
-    gradient: {
-      start: 'rgba(236, 72, 153, 0.9)',  // pink-600
-      end: 'rgba(244, 114, 182, 0.9)'    // pink-500
-    }
-  },
-  { 
-    category: 'Investment',
-    percentage: 20,
-    gradient: {
-      start: 'rgba(16, 185, 129, 0.9)',  // emerald-600
-      end: 'rgba(34, 197, 94, 0.9)'      // emerald-500
-    }
-  },
-  { 
-    category: 'Others',
-    percentage: 35,
-    gradient: {
-      start: 'rgba(124, 58, 237, 0.9)',  // violet-600
-      end: 'rgba(139, 92, 246, 0.9)'     // violet-500
-    }
-  }
+  {  percentage: 35 },
+  {  percentage: 25 },
+  {  percentage: 20 },
+  {  percentage: 10 },
+  {  percentage: 10 },
 ];
+
 
 // Create gradient fills for the chart
 const createGradient = (ctx: CanvasRenderingContext2D, start: string, end: string) => {
@@ -49,14 +22,14 @@ const createGradient = (ctx: CanvasRenderingContext2D, start: string, end: strin
 };
 
 const data = {
-  labels: expenses.map(expense => expense.category),
+  labels: piecharttheme.map(piecharttheme => piecharttheme.category),
   datasets: [{
     data: expenses.map(expense => expense.percentage),
     backgroundColor: (context: any) => {
       if (!context.chart.chartArea) return;
       const ctx = context.chart.ctx;
-      return expenses.map(expense => 
-        createGradient(ctx, expense.gradient.start, expense.gradient.end)
+      return piecharttheme.map(piecharttheme => 
+        createGradient(ctx, piecharttheme.gradient.start, piecharttheme.gradient.end)
       );
     },
     borderWidth: 2,
@@ -115,7 +88,7 @@ const options = {
       },
       font: {
         weight: '600',
-        size: 13,
+        size: 12,
         family: "'Inter', sans-serif"
       },
       padding: 6,
@@ -127,10 +100,10 @@ const options = {
   },
   layout: {
     padding: {
-      top: 10,
-      bottom: 10,
-      left: 10,
-      right: 10
+      top: 5,
+      bottom: 5,
+      left: 5,
+      right: 5
     }
   },
   animation: {
@@ -139,45 +112,45 @@ const options = {
     duration: 800,
     easing: 'easeOutQuart',
   },
-  cutout: '70%',
+  cutout: '65%',
 };
 
 export function ExpenseStats() {
   return (
-    <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Expense Statistics</h2>
-        <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm h-full flex flex-col">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-800">Expense Statistics</h2>
+        <select className="text-xs sm:text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none">
           <option>This Month</option>
           <option>Last Month</option>
           <option>Last 3 Months</option>
         </select>
       </div>
       
-      <div className="flex flex-col items-center">
-        <div className="relative w-full max-w-[300px] h-[300px] lg:max-w-[270px] lg:h-[270px] mb-6">
+      <div className="flex-1 flex flex-col items-center justify-between min-h-0">
+        <div className="relative w-full aspect-square max-h-[240px] mb-4">
           <Pie data={data} options={options} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-sm text-gray-500 mb-1">Total Spent</span>
-            <span className="text-2xl font-semibold text-gray-900">$2,450</span>
+            <span className="text-xs sm:text-sm text-gray-500 mb-1">Total Spent</span>
+            <span className="text-xl sm:text-2xl font-semibold text-gray-900">$2,450</span>
           </div>
         </div>
       
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
           {expenses.map((expense, index) => (
             <div 
               key={index} 
-              className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <div 
-                className="w-2.5 h-2.5 rounded-full shrink-0" 
-                style={{ backgroundColor: expense.gradient.start }}
+                className="w-2 h-2 rounded-full shrink-0" 
+                style={{ backgroundColor: piecharttheme[index].gradient.start }}
               />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-gray-600 truncate">
-                  {expense.category}
+                  {piecharttheme[index].category}
                 </p>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-xs sm:text-sm font-semibold text-gray-900">
                   {expense.percentage}%
                 </p>
               </div>

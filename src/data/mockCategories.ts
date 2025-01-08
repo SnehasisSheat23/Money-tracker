@@ -1,10 +1,10 @@
-import { Category } from '../types/expense';
+import { Category } from './types/expense';
 import { mockTransactions } from './mockTransactions';
 
 export const mockCategories: Category[] = [
   { 
     id: '1', 
-    name: 'Food & Drinks', 
+    name: 'Food ', 
     icon: 'utensils', 
     amount: 86.00, 
     color: 'red',

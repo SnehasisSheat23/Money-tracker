@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 // Internal Dependencies
-import { Category } from './types/expense';
-import { formatCurrency } from './utils/formatters';
-import { iconMap } from './utils/icons';
+import { Category } from '../data/types/expense';
+import { formatCurrency } from '../data/utils/formatters';
+import { iconMap } from '../data/utils/icons';
 import { TransactionTable } from './TransactionTable';
 
 /**

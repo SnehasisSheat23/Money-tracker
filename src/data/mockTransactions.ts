@@ -1,4 +1,4 @@
-import { Expense } from '../types/expense';
+import { Expense } from './types/expense';
 
 export const mockTransactions: Record<string, Expense[]> = {
   '1': [
@@ -7,14 +7,14 @@ export const mockTransactions: Record<string, Expense[]> = {
       date: new Date('2024-01-15'),
       description: 'Restaurant - Pizza',
       amount: 36.00,
-      category: { id: '1', name: 'Food & Drinks', icon: 'utensils', amount: 86.00, color: 'red', transactions: [] }
+      category: { id: '1', name: 'Food ', icon: 'utensils', amount: 86.00, color: 'red', transactions: [] }
     },
     { 
       id: '1-2',
       date: new Date('2024-01-16'),
       description: 'Coffee Shop',
       amount: 50.00,
-      category: { id: '1', name: 'Food & Drinks', icon: 'utensils', amount: 86.00, color: 'red', transactions: [] }
+      category: { id: '1', name: 'Food', icon: 'utensils', amount: 86.00, color: 'red', transactions: [] }
     }
   ],
   '2': [

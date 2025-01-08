@@ -1,7 +1,7 @@
 import React from 'react';
-import { formatCurrency } from './utils/formatters';
+import { formatCurrency } from '../data/utils/formatters';
 import { format } from 'date-fns';
-import { Expense } from './types/expense';
+import { Expense } from '../data/types/expense';
 
 interface TransactionTableProps {
   transactions: Expense[];

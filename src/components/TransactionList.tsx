@@ -5,7 +5,7 @@ import {
   Utensils, ShoppingCart, ShoppingBag,
   Bus, Film, Bolt, Heart, Home, PiggyBank
 } from 'lucide-react';
-import { mockTransactions } from '../Transactions/data/mockTransactions';
+import { mockTransactions } from '../data/mockTransactions';
 import { formatCurrency } from '../utils/formatters';
 import '../styles/global.css'
 import { Modal } from './ui/Popup';

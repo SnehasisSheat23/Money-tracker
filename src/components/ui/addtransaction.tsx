@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { nanoid } from 'nanoid';
 import { CreditCard, Plus, X } from 'lucide-react';
 import { Modal } from './Popup';
+import { categoryDetails } from '../../data/categoryDetails';
 
 interface Transaction {
   id: string;
@@ -109,17 +110,25 @@ export function AddTransaction({ isOpen, onClose, onSave }: AddTransactionProps)
                 <select
                   className="flex-1 ml-4 p-2 border rounded-lg bg-white"
                   value={transaction.category?.name || ''}
-                  onChange={(e) => handleTransactionChange(transaction.id!, 'category', {
-                    name: e.target.value,
-                    icon: 'credit-card',
-                    color: 'blue'
-                  })}
+                  onChange={(e) => {
+                    const selectedCategory = Object.values(categoryDetails).find(
+                      cat => cat.name === e.target.value
+                    );
+                    if (selectedCategory) {
+                      handleTransactionChange(transaction.id!, 'category', {
+                        name: selectedCategory.name,
+                        icon: selectedCategory.subcategories[0].icon,
+                        color: selectedCategory.color.text.replace('text-', '').replace('-400', '')
+                      });
+                    }
+                  }}
                 >
                   <option value="">Select Category</option>
-                  <option value="Food">Food</option>
-                  <option value="Shopping">Shopping</option>
-                  <option value="Transport">Transport</option>
-                  <option value="Entertainment">Entertainment</option>
+                  {Object.values(categoryDetails).map((category) => (
+                    <option key={category.name} value={category.name}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex justify-between items-center">

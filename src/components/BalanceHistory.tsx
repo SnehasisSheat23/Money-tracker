@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LoadingAnimation } from './ui/LoadingAnimation';
+import { TREND_COLORS } from '../data/utils/colors';
 
 // Types
 interface Point {
@@ -11,25 +12,6 @@ interface Point {
 // Constants
 const MONTHS = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'];
 const BALANCE_DATA = [200, 300, 450, 700, 300, 400, 100];
-
-const TREND_COLORS = {
-  up: {
-    stroke: 'rgb(37, 99, 235)', // blue
-    gradient: {
-      start: 'rgb(37, 99, 235)',
-      startOpacity: '0.2',
-      endOpacity: '0',
-    }
-  },
-  down: {
-    stroke: 'rgb(239, 68, 68)', // red
-    gradient: {
-      start: 'rgb(239, 68, 68)',
-      startOpacity: '0.2',
-      endOpacity: '0',
-    }
-  }
-};
 
 // Helper functions
 const calculateTrend = (data: number[]): 'up' | 'down' => {

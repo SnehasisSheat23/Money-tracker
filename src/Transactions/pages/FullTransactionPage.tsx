@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TransactionTable } from '../TransactionTable';
-import { iconMap } from '../utils/icons';
-import { Category } from '../types/expense';
+import { iconMap } from '../../data/utils/icons';
+import { Category } from '../../data/types/expense';
 
 interface TransactionPageProps {
   categories: Category[];

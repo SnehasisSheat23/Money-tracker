@@ -1,5 +1,5 @@
 import React from 'react';
-import { ViewMode } from './types/expense';
+import { ViewMode } from '../data/types/expense';
 import * as Tabs from '@radix-ui/react-tabs';
 import { clsx } from 'clsx';
 

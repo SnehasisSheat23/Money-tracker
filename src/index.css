@@ -18,10 +18,30 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for the category selector */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.2s ease-out forwards;
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out forwards;
+}
+
+.category-selector-container {
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 0;
+  will-change: height;
 }

@@ -4,9 +4,10 @@ import { Sidebar } from '../components/Sidebar';
 import { CategoryGrid } from '../Transactions/CategoryGrid.tsx';
 import { ExpenseList } from '../Transactions/ExpenseList.tsx';
 import { ViewSelector } from '../Transactions/ViewSelector';
-import { ViewMode } from '../Transactions/types/expense';
-import { mockCategories } from '../Transactions/data/mockCategories';
-import { mockExpenses } from '../Transactions/data/mockExpenses';
+import { ViewMode } from '../data/types/expense';
+import { mockCategories } from '../data/mockCategories';
+
+import { mockTransactions } from '../data/mockTransactions.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CategorySelector } from '../Transactions/Categoryselector';
 
@@ -16,18 +17,24 @@ export const TransactionsPage: React.FC = () => {
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const categoryGridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowCategorySelector(!entry.isIntersecting);
+      },
+      {
+        threshold: 0,
+        rootMargin: '-64px 0px 0px 0px' // Adjust this value based on your header height
+      }
+    );
 
-    const handleScroll = () => {
-      const scrollPosition = container.scrollTop;
-      setShowCategorySelector(scrollPosition > 50);
-    };
+    if (categoryGridRef.current) {
+      observer.observe(categoryGridRef.current);
+    }
 
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -64,28 +71,35 @@ export const TransactionsPage: React.FC = () => {
           </button>
         </Header>
 
-        {/* Floating Category Selector */}
-        <AnimatePresence>
-          {showCategorySelector && (
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="sticky top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm px-4"
-            >
-              <CategorySelector
-                categories={mockCategories}
-                selectedCategory={selectedCategoryId}
-                onSelectCategory={setSelectedCategoryId}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Category Selector Container with placeholder */}
+        <div className="category-selector-container" style={{ height: showCategorySelector ? 'auto' : '0' }}>
+          <AnimatePresence mode="sync">
+            {showCategorySelector && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ 
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  mass: 0.8
+                }}
+                className="bg-white border-b border-gray-200 shadow-sm overflow-hidden"
+              >
+                <CategorySelector
+                  categories={mockCategories}
+                  selectedCategory={selectedCategoryId}
+                  onSelectCategory={setSelectedCategoryId}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         <div 
           ref={containerRef}
-          className="flex-1 overflow-auto p-4 md:p-8 scroll-smooth"
+          className="flex-1 overflow-auto scroll-smooth"
         >
           <div className="max-w-7xl mx-auto space-y-6">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -93,7 +107,7 @@ export const TransactionsPage: React.FC = () => {
             </h1>
             
             {/* Categories Section */}
-            <section className="  p-4">
+            <section ref={categoryGridRef} className="p-4">
               <h2 className="text-lg font-semibold mb-4 text-gray-700">Categories</h2>
               <CategoryGrid categories={mockCategories} />
             </section>
@@ -102,7 +116,7 @@ export const TransactionsPage: React.FC = () => {
             <section className="   p-4">
               <h2 className="text-lg font-semibold mb-4 text-gray-700">Expenses</h2>
               <ViewSelector currentView={currentView} onViewChange={setCurrentView} />
-              <ExpenseList expenses={mockExpenses} />
+              <ExpenseList expenses={mockTransactions} />
             </section>
           </div>
         </div>
