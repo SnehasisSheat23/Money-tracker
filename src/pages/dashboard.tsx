@@ -1,22 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import { CreditCard, Menu } from 'lucide-react';
 import { Routes, Route } from 'react-router-dom';
 
 // Component imports
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
-import { Card } from '../components/Card';
+import { Card } from '../components/bankaccount/Card';
 import { TransactionList } from '../components/TransactionList';
 import { WeeklyActivity } from '../components/WeeklyActivity';
 import { ExpenseStats } from '../components/ExpenseStats';
 import { BalanceHistory } from '../components/BalanceHistory';
 import { AddCard } from '../components/bankaccount/AddCard';
 import { BankAccountModal } from '../components/bankaccount/BankAccountModal';
-import { BalanceCard } from '../components/bankaccount/BalanceCard';
+import { BalanceCard } from '../components/BalanceCard';
 import { ScrollButton } from '../components/ScrollButton';
 import { TransactionsPage } from './TransactionsPage';
 import { TransactionPage } from '../Transactions/pages/FullTransactionPage';
 import { mockCategories } from '../data/mockCategories';
+import { MobileNav } from '../components/MobileNav';
 
 /**
  * Types for managing financial data cards
@@ -158,10 +159,10 @@ export function Dashboard() {
   };
 
   return (
-    <div className="flex h-[100dvh] bg-gray-50 overflow-hidden">
+    <div className="flex h-[100dvh] bg-[#f5f5f7] overflow-hidden">
       {/* Sidebar with overlay */}
       <div 
-        className={`fixed inset-0 bg-black bg-opacity-50 z-20 transition-opacity md:hidden ${
+        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-20 transition-opacity md:hidden ${
           sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setSidebarOpen(false)}
@@ -178,16 +179,21 @@ export function Dashboard() {
       <div className="flex-1 flex flex-col w-full relative">
         {/* Fixed Header */}
         <div 
-          className="fixed inset-x-0 top-0 z-40 bg-white border-b border-gray-200 shadow-sm"
+          className="fixed inset-x-0 top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-gray-200/50"
           style={{ 
             paddingTop: 'max(env(safe-area-inset-top), 8px)',
-            height: 'calc(max(env(safe-area-inset-top), 8px) + 48px)'
+            height: 'calc(max(env(safe-area-inset-top), 8px) + 48px)',
+            boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)'
           }}
         >
           <div className="h-12">
             <Header>
+              <div className="md:hidden flex items-center">
+                <CreditCard className="w-6 h-6 text-[#0b84ff]-600" />
+                <span className="ml-2 font-bold text-[#0b84ff]">Moneytrack.</span>
+              </div>
               <button 
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="hidden md:block p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
               >
                 <Menu className="w-6 h-6" />
@@ -198,21 +204,21 @@ export function Dashboard() {
 
         {/* Scrollable Content Area */}
         <main 
-          className="flex-1 overflow-y-auto overscroll-y-contain"
+          className="flex-1 overflow-y-auto overscroll-y-contain md:pb-0 bg-gradient-to-b from-slate-50/80 to-white/90"
           style={{
             paddingTop: 'calc(max(env(safe-area-inset-top), 26px) + 48px)',
-            paddingBottom: 'max(env(safe-area-inset-bottom), 20px)',
             minHeight: '100%',
             height: '100dvh',
             WebkitOverflowScrolling: 'touch',
+            paddingBottom: window.innerWidth <= 768 ? 'calc(env(safe-area-inset-bottom) + 80px)' : '0px',
           }}
         >
           <div className="min-h-full">
             <Routes>
               <Route path="/" element={
-                <div className="p-3 md:p-6 lg:p-8 pb-safe">
+                <div className="p-3 md:p-6 lg:p-8">
                   {/* Dashboard Grid Layout */}
-                  <div className="max-w-[1920px] mx-auto">
+                  <div className="max-w-[1920px] mx-auto md:pb-0">
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 md:gap-6 xl:gap-8">
                       {/* Left Column - Financial Overview */}
                       <div className="xl:col-span-2 space-y-3 md:space-y-4 xl:space-y-6">
@@ -319,6 +325,9 @@ export function Dashboard() {
             </Routes>
           </div>
         </main>
+        
+        {/* Add Mobile Navigation */}
+        <MobileNav />
       </div>
 
       {/* Modals */}

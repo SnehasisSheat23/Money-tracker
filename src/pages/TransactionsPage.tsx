@@ -6,8 +6,9 @@ import { ExpenseList } from '../Transactions/ExpenseList.tsx';
 import { ViewSelector } from '../Transactions/ViewSelector';
 import { ViewMode } from '../data/types/expense';
 import { mockCategories } from '../data/mockCategories';
+import { CreditCard } from 'lucide-react';
+import { MobileNav } from '../components/MobileNav';
 
-import { mockTransactions } from '../data/mockTransactions.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CategorySelector } from '../Transactions/Categoryselector';
 
@@ -51,28 +52,14 @@ export const TransactionsPage: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col w-full md:w-[calc(100%-16rem)] relative">
         <Header>
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-100 md:hidden"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
+          <div className="md:hidden flex items-center">
+            <CreditCard className="w-6 h-6 text-blue-600" />
+            <span className="ml-2 font-bold text-blue-600">Moneytrack.</span>
+          </div>
         </Header>
 
         {/* Category Selector Container with placeholder */}
-        <div className="category-selector-container" style={{ height: showCategorySelector ? 'auto' : '0' }}>
+        <div className="category-selector-container  w-full " style={{ height: showCategorySelector ? 'auto' : '0' }}>
           <AnimatePresence mode="sync">
             {showCategorySelector && (
               <motion.div
@@ -85,7 +72,7 @@ export const TransactionsPage: React.FC = () => {
                   damping: 30,
                   mass: 0.8
                 }}
-                className="bg-white border-b border-gray-200 shadow-sm overflow-hidden"
+                className="bg-white border-b border-gray-200 shadow-sm  overflow-hidden"
               >
                 <CategorySelector
                   categories={mockCategories}
@@ -101,7 +88,7 @@ export const TransactionsPage: React.FC = () => {
           ref={containerRef}
           className="flex-1 overflow-auto scroll-smooth"
         >
-          <div className="max-w-7xl mx-auto space-y-6">
+          <div className="max-w-7xl mx-auto space-y-6 p-4 overflow-y-auto sm:pb-4" >
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
               Expense Tracker
             </h1>
@@ -113,13 +100,16 @@ export const TransactionsPage: React.FC = () => {
             </section>
 
             {/* Expenses Section */}
-            <section className="   p-4">
+            <section className="   p-4 ">
               <h2 className="text-lg font-semibold mb-4 text-gray-700">Expenses</h2>
               <ViewSelector currentView={currentView} onViewChange={setCurrentView} />
-              <ExpenseList expenses={mockTransactions} />
+              <ExpenseList />
             </section>
           </div>
         </div>
+
+        {/* Add Mobile Navigation */}
+        <MobileNav />
       </main>
 
       {/* Mobile Overlay */}

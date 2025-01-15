@@ -119,7 +119,10 @@ export function ExpenseStats() {
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm h-full flex flex-col">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+        <div>
         <h2 className="text-base sm:text-lg font-semibold text-gray-800">Expense Statistics</h2>
+        <p className="text-xs text-slate-500 mt-1">Weekly transaction overview</p>
+        </div>
         <select className="text-xs sm:text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none">
           <option>This Month</option>
           <option>Last Month</option>
@@ -136,14 +139,14 @@ export function ExpenseStats() {
           </div>
         </div>
       
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
           {expenses.map((expense, index) => (
             <div 
               key={index} 
               className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <div 
-                className="w-2 h-2 rounded-full shrink-0" 
+                className="w-2 h-2 rounded-lg shrink-0" 
                 style={{ backgroundColor: piecharttheme[index].gradient.start }}
               />
               <div className="min-w-0 flex-1">

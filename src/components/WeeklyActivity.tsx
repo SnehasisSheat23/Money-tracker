@@ -1,9 +1,5 @@
-import React from 'react';
 import '../styles/global.css';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Rectangle
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Rectangle } from 'recharts';
 
 // Types
 interface WeeklyData {
@@ -18,6 +14,7 @@ interface TooltipProps {
   payload?: any[];
   label?: string;
 }
+
 const WEEKLY_DATA: WeeklyData[] = [
   { day: 'Mon', deposit: 320, withdraw: 260, total: 580 },
   { day: 'Tue', deposit: 480, withdraw: 360, total: 840 },
@@ -28,55 +25,51 @@ const WEEKLY_DATA: WeeklyData[] = [
   { day: 'Sun', deposit: 350, withdraw: 120, total: 470 }
 ];
 
-// Calculate dynamic ticks based on data
-const calculateYAxisTicks = (data: WeeklyData[]) => {
-  const maxValue = Math.max(...data.map(item => Math.max(item.deposit, item.withdraw)));
-  const tickCount = 5; // Number of ticks you want
-  const roundedMax = Math.ceil(maxValue / 100) * 100; // Round to nearest hundred
-  const interval = roundedMax / (tickCount - 1);
-  return Array.from({ length: tickCount }, (_, i) => i * interval);
-};
-
-// Constants
 const CHART_CONFIG = {
-  margins: { top: 10, right: 10, left: 0, bottom: 5 },
-  barMaxSize: 32,
-  barGap: 3,
-  barCategoryGap: '25%',
-  animationDuration: 800,
+  margins: { top: 20, right: 15, left: 0, bottom: 5 },
+  barMaxSize: 28,
+  barGap: 4,
+  barCategoryGap: '28%',
+  animationDuration: 1000,
   colors: {
     deposit: {
-      start: 'rgba(79, 70, 229, 0.9)', // indigo-600
-      end: 'rgba(99, 102, 241, 0.7)'   // indigo-500
+      start: '#0b84ff', // slate-700
+      end: '#0b84ff'   // slate-600
     },
     withdraw: {
-      start: 'rgba(236, 72, 153, 0.9)', // pink-600
-      end: 'rgba(244, 114, 182, 0.7)'   // pink-500
+      start: 'rgba(156, 175, 201, 0.95)', // slate-400
+      end: 'rgba(166, 184, 207, 0.85)'    // slate-300
     }
   },
-  yAxisTicks: calculateYAxisTicks(WEEKLY_DATA)
+  gridColor: 'rgba(226, 232, 240, 0.6)' // slate-200
 };
-
-
 
 const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (!active || !payload?.length) return null;
   
   return (
-    <div className="backdrop-blur-sm bg-white/90 shadow-lg rounded-lg p-3 border border-gray-100">
-      <p className="font-medium text-gray-800 mb-2 text-sm">{label}</p>
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between gap-6">
-          <span className="text-xs font-medium text-indigo-600">Deposit</span>
-          <span className="text-xs font-semibold text-gray-700">
-            ${payload[0]?.value}
+    <div className="backdrop-blur-md bg-white/95 shadow-lg rounded-lg p-4 border border-slate-100">
+      <p className="font-medium text-slate-700 mb-3 text-sm">{label}</p>
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between gap-8">
+          <span className="text-xs font-medium text-slate-600">Inflow</span>
+          <span className="text-xs font-semibold text-slate-800">
+            ${payload[0]?.value.toLocaleString()}
           </span>
         </div>
-        <div className="flex items-center justify-between gap-6">
-          <span className="text-xs font-medium text-pink-600">Withdraw</span>
-          <span className="text-xs font-semibold text-gray-700">
-            ${payload[1]?.value}
+        <div className="flex items-center justify-between gap-8">
+          <span className="text-xs font-medium text-slate-600">Outflow</span>
+          <span className="text-xs font-semibold text-slate-800">
+            ${payload[1]?.value.toLocaleString()}
           </span>
+        </div>
+        <div className="pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-between gap-8">
+            <span className="text-xs font-medium text-slate-700">Net Flow</span>
+            <span className="text-xs font-semibold text-slate-900">
+              ${(payload[0]?.value - payload[1]?.value).toLocaleString()}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -100,17 +93,17 @@ const CustomBar = (props: any) => {
       <Rectangle
         {...props}
         fill={fill}
-        rx={4}
-        ry={4}
-        className="transition-all duration-300 ease-in-out"
-        opacity={0.9}
+        rx={3}
+        ry={3}
+        className="transition-all duration-300 ease-out"
+        opacity={0.95}
         onMouseEnter={(e: any) => {
           e.target.style.opacity = 1;
-          e.target.style.transform = 'scale(1.02)';
+          e.target.style.transform = `translate(${x} ${y-2}) scale(1, ${height/y})`;
         }}
         onMouseLeave={(e: any) => {
-          e.target.style.opacity = 0.9;
-          e.target.style.transform = 'scale(1)';
+          e.target.style.opacity = 0.95;
+          e.target.style.transform = 'scale(1, 1)';
         }}
       />
     </g>
@@ -119,29 +112,32 @@ const CustomBar = (props: any) => {
 
 export function WeeklyActivity() {
   return (
-    <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
-      <div className="flex flex-col gap-4 mb-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <h2 className="text-xl font-semibold text-gray-800">Weekly Activity</h2>
-          <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none">
-            <option>This Week</option>
-            <option>Last Week</option>
-            <option>Last 2 Weeks</option>
+    <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col gap-5 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">Cash Flow Analysis</h2>
+            <p className="text-xs text-slate-500 mt-1">Weekly transaction overview</p>
+          </div>
+          <select className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none">
+            <option>Current Week</option>
+            <option>Previous Week</option>
+            <option>Last 14 Days</option>
           </select>
         </div>
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-            <span className="text-xs text-gray-600">Deposit</span>
+            <div className="w-3 h-3 rounded-sm bg-[#0b84ff]" />
+            <span className="text-xs font-medium text-slate-600">Cash Inflow</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-pink-500" />
-            <span className="text-xs text-gray-600">Withdraw</span>
+            <div className="w-3 h-3 rounded-sm bg-slate-400" />
+            <span className="text-xs font-medium text-slate-600">Cash Outflow</span>
           </div>
         </div>
       </div>
 
-      <div className="h-[280px] sm:h-[320px] w-full">
+      <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={WEEKLY_DATA}
@@ -150,18 +146,18 @@ export function WeeklyActivity() {
             barCategoryGap={CHART_CONFIG.barCategoryGap}
           >
             <CartesianGrid 
-              strokeDasharray="4 4" 
+              strokeDasharray="3 3" 
               vertical={false} 
-              stroke="#f1f5f9"
+              stroke={CHART_CONFIG.gridColor}
             />
             <XAxis
               dataKey="day"
               axisLine={false}
               tickLine={false}
               tick={{ 
-                fill: '#64748b',
-                fontSize: 11,
-                fontFamily: 'Inter'
+                fill: '#475569',
+                fontSize: 12,
+                fontWeight: 500
               }}
               dy={8}
             />
@@ -169,17 +165,16 @@ export function WeeklyActivity() {
               axisLine={false}
               tickLine={false}
               tick={{ 
-                fill: '#64748b',
-                fontSize: 11,
-                fontFamily: 'Inter'
+                fill: '#475569',
+                fontSize: 12,
+                fontWeight: 500
               }}
               tickFormatter={(value) => `$${value}`}
-              width={45}
-              ticks={CHART_CONFIG.yAxisTicks}
+              width={50}
             />
             <Tooltip 
               content={<CustomTooltip />}
-              cursor={{ fill: 'rgba(244, 244, 245, 0.7)' }}
+              cursor={{ fill: 'rgba(241, 245, 249, 0.8)' }}
             />
             <Bar
               dataKey="deposit"

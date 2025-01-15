@@ -25,7 +25,7 @@ export function LoadingAnimation() {
               ease: "easeInOut"
             }}
           >
-            $
+            ₹
           </motion.div>
         ))}
       </div>

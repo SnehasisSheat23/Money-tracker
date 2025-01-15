@@ -27,7 +27,7 @@ export function BalanceCard({ amount, title, variant }: BalanceCardProps) {
         </div>
         <p className="text-xs sm:text-sm font-medium">{title}</p>
       </div>
-      <h3 className="text-lg sm:text-2xl font-semibold text-gray-900">${amount}</h3>
+      <h2 className="text-lg sm:text-2xl font-medium text-gray-900">${amount}</h2>
     </motion.div>
   );
 }
