@@ -6,7 +6,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
 import { Card } from '../components/bankaccount/Card';
-import { TransactionList } from '../components/TransactionList';
+import { TransactionList } from '../components/TransactionList/TransactionList';
 import { WeeklyActivity } from '../components/WeeklyActivity';
 import { ExpenseStats } from '../components/ExpenseStats';
 import { BalanceHistory } from '../components/BalanceHistory';

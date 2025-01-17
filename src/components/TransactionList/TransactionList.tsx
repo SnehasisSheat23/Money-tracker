@@ -5,26 +5,17 @@ import {
   Utensils, ShoppingCart, ShoppingBag,
   Bus, Film, Bolt, Heart, Home, PiggyBank
 } from 'lucide-react';
-import { mockTransactions } from '../data/mockTransactions';
-import { formatCurrency } from '../utils/formatters';
-import '../styles/global.css'
-import { Modal } from './ui/Popup';
-import { nanoid } from 'nanoid';
-import { AddTransaction } from './ui/addtransaction';
+import { formatCurrency } from '../../utils/formatters';
+import '../../styles/global.css'
+import { Modal } from '../ui/Popup';
+import { Transaction } from '../../data/types/transaction';
+import { AddTransaction } from '../ui/addtransaction';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LoadingAnimation } from './ui/LoadingAnimation';
+import { LoadingAnimation } from '../ui/LoadingAnimation';
+import { TransactionListApi } from '../../api/TransactionListApi';
+import { useInView } from 'react-intersection-observer';
 
-interface Transaction {
-  id: string;
-  date: Date;
-  description: string;
-  amount: number;
-  category: {
-    name: string;
-    icon: string;
-    color: string;
-  };
-}
+
 
 export function TransactionList() {
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
@@ -38,6 +29,11 @@ export function TransactionList() {
   const [swipeProgress, setSwipeProgress] = useState(0);
   const [swipedId, setSwipedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const { ref: loadMoreRef, inView } = useInView();
   const swipeThreshold = 80; // pixels needed to trigger delete
 
   // Add check for mobile devices
@@ -56,10 +52,52 @@ export function TransactionList() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Flatten transactions for display
-  const allTransactions = Object.values(mockTransactions)
-    .flat()
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  useEffect(() => {
+    fetchInitialTransactions();
+  }, []);
+
+  useEffect(() => {
+    if (inView && hasMore && !isLoadingMore) {
+      loadMoreTransactions();
+    }
+  }, [inView]);
+
+  const fetchInitialTransactions = async () => {
+    setIsLoading(true);
+    try {
+      const { transactions: newTransactions, hasMore: more } = await TransactionListApi.fetchTransactions(0);
+      setTransactions(newTransactions.map(t => ({
+        ...t,
+        date: new Date(t.date) // Ensure dates are properly instantiated
+      })));
+      setHasMore(more);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      setTransactions([]);
+      setHasMore(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMoreTransactions = async () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const { transactions: newTransactions, hasMore: more } = await TransactionListApi.fetchTransactions(nextPage);
+      setTransactions(prev => [...prev, ...newTransactions.map(t => ({
+        ...t,
+        date: new Date(t.date) // Ensure dates are properly instantiated
+      }))]);
+      setHasMore(more);
+      setPage(nextPage);
+    } catch (error) {
+      console.error('Error loading more transactions:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const handleTouchStart = (e: React.TouchEvent, id: string) => {
     if (!isMobile) return;
@@ -78,7 +116,7 @@ export function TransactionList() {
     const progress = Math.min(swipeDistance, swipeThreshold);
     setSwipeProgress(progress);
 
-    // Vibrate at 75% threshold
+    // Vibratation
     if (progress > swipeThreshold * 0.75 && swipeProgress <= swipeThreshold * 0.75) {
       navigator.vibrate?.(1);
     }
@@ -147,7 +185,10 @@ export function TransactionList() {
     >
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Recent Transactions</h2>
+      <div>
+            <h2 className="text-lg font-semibold text-slate-800">Recent Transactions</h2>
+            <p className="text-xs text-slate-500 mt-1">daily transactions </p>
+          </div>
         <div className="flex gap-2 pr-2">
           <button 
             onClick={() => setIsAddModalOpen(true)}
@@ -156,7 +197,7 @@ export function TransactionList() {
             <Plus className="w-4 h-4" />
             <span className="text-sm font-medium">Add</span>
           </button>
-          <button className="text-blue-600 text-sm font-medium hover:text-blue-700">
+          <button className="text-blue-600 text-sm font-medium p-2 hover:text-blue-700">
             See All
           </button>
         </div>
@@ -170,7 +211,7 @@ export function TransactionList() {
             scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent
             hover:scrollbar-thumb-gray-300
             ${isMobile ? 'h-[calc(100vh-20rem)]' : 'h-[calc(100vh-36rem)]'}`}>
-            {allTransactions.map((transaction) => !deletedIds.includes(transaction.id) && (
+            {transactions.map((transaction) => !deletedIds.includes(transaction.id) && (
               <motion.div
                 key={transaction.id}
                 initial={{ opacity: 0, x: -20 }}
@@ -211,12 +252,12 @@ export function TransactionList() {
                   onMouseLeave={() => !isMobile && setShowDeleteId(null)}
                 >
                   <div className="flex items-center flex-1">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center
                       bg-${transaction.category.color}-50 text-${transaction.category.color}-600`}>
                       {getCategoryIcon(transaction.category.icon)}
                     </div>
                     <div className="ml-4 flex-1">
-                      <p className="font-medium text-gray-900">{transaction.description}</p>
+                      <h2 className="font-medium text-gray-900">{transaction.description}</h2>
                       <p className="text-sm text-gray-800">
                         {transaction.date.toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -240,6 +281,15 @@ export function TransactionList() {
                 </div>
               </motion.div>
             ))}
+            {hasMore && (
+              <div ref={loadMoreRef} className="py-4 flex justify-center">
+                {isLoadingMore ? (
+                  <LoadingAnimation />
+                ) : (
+                  <span className="text-gray-500">Scroll for more</span>
+                )}
+              </div>
+            )}
           </div>
         </AnimatePresence>
       )}
@@ -249,34 +299,34 @@ export function TransactionList() {
         onClose={() => setDeleteConfirm(null)}
         title="Delete Transaction"
       >
-        {deleteConfirm && allTransactions.find(t => t.id === deleteConfirm) && (
+        {deleteConfirm && transactions.find(t => t.id === deleteConfirm) && (
           <>
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center
-                  bg-${allTransactions.find(t => t.id === deleteConfirm)?.category.color}-50 
-                  text-${allTransactions.find(t => t.id === deleteConfirm)?.category.color}-600`}>
-                  {getCategoryIcon(allTransactions.find(t => t.id === deleteConfirm)?.category.icon || '')}
+                  bg-${transactions.find(t => t.id === deleteConfirm)?.category.color}-50 
+                  text-${transactions.find(t => t.id === deleteConfirm)?.category.color}-600`}>
+                  {getCategoryIcon(transactions.find(t => t.id === deleteConfirm)?.category.icon || '')}
                 </div>
                 <div>
                   <p className="font-medium">
-                    {allTransactions.find(t => t.id === deleteConfirm)?.description}
+                    {transactions.find(t => t.id === deleteConfirm)?.description}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {allTransactions.find(t => t.id === deleteConfirm)?.category.name}
+                    {transactions.find(t => t.id === deleteConfirm)?.category.name}
                   </p>
                 </div>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Amount:</span>
                 <span className="font-medium">
-                  {formatCurrency(allTransactions.find(t => t.id === deleteConfirm)?.amount || 0)}
+                  {formatCurrency(transactions.find(t => t.id === deleteConfirm)?.amount || 0)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Date:</span>
                 <span className="font-medium">
-                  {allTransactions.find(t => t.id === deleteConfirm)?.date.toLocaleDateString('en-US', {
+                  {transactions.find(t => t.id === deleteConfirm)?.date.toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
