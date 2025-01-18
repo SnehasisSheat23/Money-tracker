@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
-import { Plus, Check, X } from 'lucide-react';
+import { Plus, Check, X, Trash2 } from 'lucide-react';
 import { Expense } from '../data/types/expense';
 import { formatCurrency } from '../data/utils/formatters';
 import { Modal } from '../components/ui/Popup';
+import { useTransactions } from '../hooks/useTransactions';
+import { DeleteTransaction } from '../components/ui/deleteTransaction';
+import { UndoDelete } from '../components/ui/undoDelete';
+import { categoryConfig } from '../data/categoryConfig';
+import { Select } from '../components/ui/Select';
+import debounce from 'lodash/debounce';
+
+// Add new type for tracking which cell is being edited
+type EditingCell = {
+  id: string;
+  field: 'description' | 'category' | 'amount';
+} | null;
 
 interface EditableRowProps {
   expense?: Expense;
@@ -64,6 +76,283 @@ const EditableRow: React.FC<EditableRowProps> = ({ expense, isNew, onSave, onCan
   );
 };
 
+const EditableCell: React.FC<{
+  value: string;
+  type?: string;
+  onChange: (value: string) => void;
+  onBlur: () => void;
+  isEditing: boolean;
+  className?: string;
+}> = ({ value, type = 'text', onChange, onBlur, isEditing, className }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  if (!isEditing) {
+    return (
+      <div
+        className={`cursor-text px-4 py-2.5 rounded-sm transition-all duration-200 
+        hover:bg-gray-50 active:scale-[0.99] ${className}`}
+      >
+        {value}
+      </div>
+    );
+  }
+
+  return (
+    <input
+      ref={inputRef}
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
+      className={`w-full px-4 py-2 bg-white border-0 focus:ring-2 focus:ring-blue-100 
+      rounded-sm transition-all duration-200 animate-fade-in ${className}`}
+    />
+  );
+};
+
+const CategoryDropdown: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  onBlur: () => void;
+  isEditing: boolean;
+  className?: string;
+}> = ({ value, onChange, onBlur, isEditing, className }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const categories = Object.keys(categoryConfig);
+
+  useEffect(() => {
+    if (isEditing) {
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  }, [isEditing]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        onBlur();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onBlur]);
+
+  if (!isEditing) {
+    return (
+      <div className={`cursor-text px-4 py-2.5 rounded-sm ${className}`}>
+        {value || 'Select category'}
+      </div>
+    );
+  }
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <div
+        className={`px-4 py-2.5 rounded-sm bg-gray-50 border border-gray-200 ${className}`}
+      >
+        {value || 'Select category'}
+      </div>
+      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg 
+        animate-fade-slide-down">
+        <div className="max-h-60 overflow-auto">
+          {categories.map((category) => (
+            <div
+              key={category}
+              onClick={() => {
+                onChange(category);
+                setIsOpen(false);
+                onBlur();
+              }}
+              className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+            >
+              {category}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface ExpenseRowProps {
+  expense: Expense;
+  onUpdate: (id: string, data: Partial<Expense>) => void;
+  editingCell: EditingCell;
+  onStartEditing: (id: string, field: 'description' | 'category' | 'amount') => void;
+}
+
+const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onUpdate, editingCell, onStartEditing }) => {
+  const { deleteTransaction } = useTransactions();
+  const [data, setData] = useState({
+    description: expense.description,
+    category: expense.category.name,
+    amount: expense.amount.toString()
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+
+  // Debounced update function
+  const debouncedUpdate = useCallback(
+    debounce((updates: Partial<Expense>) => {
+      onUpdate(expense.id, updates);
+    }, 500),
+    [expense.id, onUpdate]
+  );
+
+  const handleChange = (field: string, value: string) => {
+    setData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // Prepare updates
+      const updates = {
+        description: newData.description,
+        category: { name: newData.category },
+        amount: parseFloat(newData.amount || '0')
+      };
+
+      // Only trigger update if values actually changed
+      if (
+        updates.description !== expense.description ||
+        updates.category.name !== expense.category.name ||
+        updates.amount !== expense.amount
+      ) {
+        debouncedUpdate(updates);
+      }
+
+      return newData;
+    });
+    setHasChanges(true);
+  };
+
+  const isEditing = (field: 'description' | 'category' | 'amount') => 
+    editingCell?.id === expense.id && editingCell?.field === field;
+
+  const handleCellClick = (field: 'description' | 'category' | 'amount') => {
+    if (!isEditing(field)) {
+      onStartEditing(expense.id, field);
+    }
+  };
+
+  const handleUpdate = () => {
+    if (!hasChanges) return; // Skip update if no changes
+
+    const updates = {
+      description: data.description,
+      category: { name: data.category },
+      amount: parseFloat(data.amount)
+    };
+
+    // Only update if values actually changed
+    if (
+      updates.description !== expense.description ||
+      updates.category.name !== expense.category.name ||
+      updates.amount !== expense.amount
+    ) {
+      onUpdate(expense.id, updates);
+    }
+    
+    setHasChanges(false);
+  };
+
+  const handleDelete = async () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteTransaction(expense.id);
+      setDeletedIds(prev => [...prev, expense.id]);
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to delete:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleUndo = async (id: string) => {
+    // Implement undo logic here
+    setDeletedIds(prev => prev.filter(dId => dId !== id));
+  };
+
+  return (
+    <>
+      <div className="group grid grid-cols-12 border-b border-gray-100 hover:bg-gray-50 
+      animate-fade-slide-down [animation-fill-mode:both] [animation-delay:var(--delay)]"
+        style={{ '--delay': `${Math.random() * 200}ms` } as React.CSSProperties}
+      >
+        <div className="col-span-5 px-1" onClick={() => handleCellClick('description')}>
+          <EditableCell
+            value={data.description}
+            onChange={(value) => handleChange('description', value)}
+            onBlur={handleUpdate}
+            isEditing={isEditing('description')}
+            className="text-sm text-gray-800"
+          />
+        </div>
+        <div className="col-span-3 px-1">
+          <Select
+            value={data.category}
+            options={Object.keys(categoryConfig)}
+            onChange={(value) => handleChange('category', value)}
+            onBlur={() => onStartEditing(expense.id, 'category')}
+            className="text-sm text-gray-600"
+            isOpen={isEditing('category')}
+            onOpen={() => onStartEditing(expense.id, 'category')}
+          />
+        </div>
+        <div className="col-span-3 px-1" onClick={() => handleCellClick('amount')}>
+          <EditableCell
+            value={data.amount}
+            type="number"
+            onChange={(value) => handleChange('amount', value)}
+            onBlur={handleUpdate}
+            isEditing={isEditing('amount')}
+            className="text-sm text-right text-gray-900"
+          />
+        </div>
+        <div className="col-span-1 flex items-center justify-end px-2">
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 
+            hover:bg-red-50 hover:text-red-600"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <DeleteTransaction
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={confirmDelete}
+        transaction={expense}
+      />
+
+      <UndoDelete
+        deletedIds={deletedIds}
+        onUndo={handleUndo}
+        onClose={() => setDeletedIds([])}
+      />
+    </>
+  );
+};
+
 interface ExpenseGroupProps {
   date: Date;
   expenses: Expense[];
@@ -75,13 +364,56 @@ export const ExpenseGroup: React.FC<ExpenseGroupProps> = ({
   date, 
   expenses, 
   totalAmount,
-  onAddExpense 
 }) => {
+  const { addTransaction, updateTransaction } = useTransactions();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNewRow, setShowNewRow] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const isDesktop = window.innerWidth >= 640;
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState<number | undefined>(undefined);
+  const [editingCell, setEditingCell] = useState<EditingCell>(null);
+  const [updateQueue, setUpdateQueue] = useState<{[key: string]: Partial<Expense>}>({});
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const resizeObserver = new ResizeObserver((entries) => {
+        setContentHeight(entries[0].contentRect.height);
+      });
+      
+      resizeObserver.observe(contentRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, []);
+
+  // Batch updates
+  useEffect(() => {
+    if (Object.keys(updateQueue).length > 0) {
+      const timer = setTimeout(async () => {
+        try {
+          await Promise.all(
+            Object.entries(updateQueue).map(([id, updates]) => 
+              updateTransaction(id, updates)
+            )
+          );
+          setUpdateQueue({});
+        } catch (error) {
+          console.error('Failed to batch update expenses:', error);
+        }
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [updateQueue]);
+
+  const handleStartEditing = (id: string, field: 'description' | 'category' | 'amount') => {
+    setEditingCell({ id, field });
+  };
+
+  const handleStopEditing = () => {
+    setEditingCell(null);
+  };
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -92,101 +424,97 @@ export const ExpenseGroup: React.FC<ExpenseGroupProps> = ({
     }
   };
 
+  const handleAddExpense = async (data: Partial<Expense>) => {
+    try {
+      await addTransaction({
+        ...data,
+        date,
+        category: { name: data.category || 'Other' }
+      });
+      setShowNewRow(false);
+      setShowMobileModal(false);
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+    }
+  };
+
+  const handleUpdateExpense = (id: string, updates: Partial<Expense>) => {
+    setUpdateQueue(prev => ({
+      ...prev,
+      [id]: { ...prev[id], ...updates }
+    }));
+  };
+
   return (
-    <div className="mb-4 bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="mb-6 bg-white rounded-lg shadow-sm ring-1 ring-gray-100 
+    transition-all duration-200 hover:shadow-md">
       <div 
-        className="flex justify-between items-center px-4 py-3 border-b border-gray-200 cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+        className="flex justify-between items-center px-6 py-4 cursor-pointer 
+        hover:bg-gray-50 transition-all duration-200"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <div className="flex items-center gap-2">
-          <span className={`text-sm text-gray-600 transition-transform duration-200 ${
-            isCollapsed ? 'rotate-[-90deg]' : ''
-          }`}>
+        <div className="flex items-center gap-3">
+          <span className={`text-sm text-gray-400 transition-transform duration-300 
+          ease-spring ${isCollapsed ? 'rotate-[-90deg]' : ''}`}>
             ▼
           </span>
-          <h3 className="text-sm font-semibold text-gray-800">
-            {format(date, 'MMM d, yyyy')}
+          <h3 className="text-sm font-medium text-gray-900">
+            {format(date, 'MMMM d, yyyy')}
           </h3>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold text-gray-800">
+        <div className="flex items-center gap-6">
+          <span className="text-sm font-medium text-gray-900">
             {formatCurrency(totalAmount)}
           </span>
           <button
             onClick={handleAddClick}
-            className="p-1.5 rounded hover:bg-gray-200 transition-colors"
+            className="p-1.5 rounded-full hover:bg-gray-100 
+            transition-all duration-200 hover:scale-105 active:scale-95"
             title="Add expense"
           >
-            <Plus className="w-4 h-4 text-gray-600" />
+            <Plus className="w-4 h-4 text-gray-500" />
           </button>
         </div>
       </div>
-      {!isCollapsed && (
-        <div>
-          <div className="grid grid-cols-12 px-6  border-b border-gray-100 bg-gray-50">
+      <div
+        className="overflow-hidden transition-[height] duration-300 ease-spring"
+        style={{ height: isCollapsed ? 0 : contentHeight }}
+      >
+        <div ref={contentRef}>
+          <div className="grid grid-cols-12 px-6 py-3 border-y border-gray-100 bg-gray-50">
             <div className="col-span-5">
-              <span className="text-xs tracking-wider font-small text-gray-500">DESCRIPTION</span>
+              <span className="text-xs font-medium text-gray-500">Description</span>
             </div>
             <div className="col-span-4">
-              <span className="text-xs tracking-wider font-small text-gray-500">CATEGORY</span>
+              <span className="text-xs font-medium text-gray-500">Category</span>
             </div>
             <div className="col-span-3 text-right">
-              <span className="text-xs tracking-wider font-small text-gray-500">AMOUNT</span>
+              <span className="text-xs font-medium text-gray-500">Amount</span>
             </div>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-50">
             {expenses.map((expense) => (
-              editingId === expense.id ? (
-                <EditableRow
-                  key={expense.id}
-                  expense={expense}
-                  onSave={(data) => {
-                    setEditingId(null);
-                  }}
-                  onCancel={() => setEditingId(null)}
-                />
-              ) : (
-                <div 
-                  key={expense.id}
-                  onClick={() => setEditingId(expense.id)} 
-                  className="grid grid-cols-12 px-6 py-3.5 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
-                >
-                  <div className="col-span-5 flex items-center">
-                    <span className="text-sm text-gray-800 font-medium block truncate group-hover:text-blue-600 transition-colors" 
-                          title={expense.description}>
-                      {expense.description}
-                    </span>
-                  </div>
-                  <div className="col-span-4 flex items-center min-w-0">
-                    <span className="inline-flex px-2.5 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600 group-hover:bg-gray-200 transition-colors whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
-                          title={expense.category.name}>
-                      {expense.category.name}
-                    </span>
-                  </div>
-                  <div className="col-span-3 flex items-center justify-end">
-                    <span className="text-sm font-medium text-gray-900">
-                      {formatCurrency(expense.amount)}
-                    </span>
-                  </div>
-                </div>
-              )
+              <ExpenseRow
+                key={expense.id}
+                expense={expense}
+                onUpdate={handleUpdateExpense}
+                editingCell={editingCell}
+                onStartEditing={handleStartEditing}
+              />
             ))}
             
             {showNewRow && (
-              <div className="px-2">
+              <div className="px-2 py-1 bg-blue-50/50">
                 <EditableRow
                   isNew
-                  onSave={(data) => {
-                    onAddExpense(date, data);
-                    setShowNewRow(false);
-                  }}
+                  onSave={handleAddExpense}
                   onCancel={() => setShowNewRow(false)}
                 />
               </div>
             )}
           </div>
         </div>
-      )}
+      </div>
 
       <Modal 
         isOpen={showMobileModal} 
@@ -196,10 +524,7 @@ export const ExpenseGroup: React.FC<ExpenseGroupProps> = ({
         <div className="p-4">
           <EditableRow
             isNew
-            onSave={(data) => {
-              onAddExpense(date, data);
-              setShowMobileModal(false);
-            }}
+            onSave={handleAddExpense}
             onCancel={() => setShowMobileModal(false)}
           />
         </div>

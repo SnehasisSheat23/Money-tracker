@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { nanoid } from 'nanoid';
 import { CreditCard, Plus, X } from 'lucide-react';
 import { Modal } from './Popup';
-import { categoryDetails } from '../../data/categoryDetails';
+import { categoryConfig } from '../../data/categoryConfig';
 
 interface Transaction {
   id: string;
@@ -23,6 +23,7 @@ interface AddTransactionProps {
 }
 
 export function AddTransaction({ isOpen, onClose, onSave }: AddTransactionProps) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [newTransactions, setNewTransactions] = useState<Partial<Transaction>[]>([{
     id: nanoid(),
     date: new Date(),
@@ -41,7 +42,24 @@ export function AddTransaction({ isOpen, onClose, onSave }: AddTransactionProps)
 
   const handleTransactionChange = (id: string, field: keyof Transaction, value: any) => {
     setNewTransactions(prev =>
-      prev.map(t => t.id === id ? { ...t, [field]: value } : t)
+      prev.map(t => {
+        if (t.id === id) {
+          if (field === 'category') {
+            // When category changes, automatically set the icon and color
+            const categoryDetails = categoryConfig[value as keyof typeof categoryConfig];
+            return {
+              ...t,
+              category: {
+                name: value,
+                icon: categoryDetails.icon,
+                color: categoryDetails.color
+              }
+            };
+          }
+          return { ...t, [field]: value };
+        }
+        return t;
+      })
     );
   };
 
@@ -49,9 +67,39 @@ export function AddTransaction({ isOpen, onClose, onSave }: AddTransactionProps)
     setNewTransactions(prev => prev.filter(t => t.id !== id));
   };
 
+  const validateTransaction = (transaction: Partial<Transaction>): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!transaction.description?.trim()) {
+      newErrors.description = 'Description is required';
+    }
+
+    if (!transaction.amount || transaction.amount <= 0) {
+      newErrors.amount = 'Amount must be greater than 0';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSave = () => {
-    onSave(newTransactions);
+    const isValid = newTransactions.every(validateTransaction);
+    
+    if (!isValid) return;
+
+    const processedTransactions = newTransactions.map(transaction => ({
+      ...transaction,
+      date: transaction.date || new Date(),
+      category: transaction.category || {
+        name: 'Other',
+        icon: 'credit-card',
+        color: 'gray'
+      }
+    }));
+
+    onSave(processedTransactions);
     setNewTransactions([{ id: nanoid(), date: new Date() }]);
+    setErrors({});
   };
 
   const handleClose = () => {
@@ -85,48 +133,71 @@ export function AddTransaction({ isOpen, onClose, onSave }: AddTransactionProps)
               )}
             </div>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Description</span>
-                <input
-                  type="text"
-                  placeholder="Enter description"
-                  className="flex-1 ml-4 p-2 border rounded-lg bg-white"
-                  value={transaction.description || ''}
-                  onChange={(e) => handleTransactionChange(transaction.id!, 'description', e.target.value)}
-                />
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Description</span>
+                  <input
+                    type="text"
+                    placeholder="Enter description"
+                    className={`flex-1 ml-4 p-2 border rounded-lg bg-white
+                      ${errors[`${transaction.id}-description`] ? 'border-red-500' : 'border-gray-200'}`}
+                    value={transaction.description || ''}
+                    onChange={(e) => {
+                      handleTransactionChange(transaction.id!, 'description', e.target.value);
+                      if (errors[`${transaction.id}-description`]) {
+                        setErrors(prev => ({
+                          ...prev,
+                          [`${transaction.id}-description`]: ''
+                        }));
+                      }
+                    }}
+                  />
+                </div>
+                {errors[`${transaction.id}-description`] && (
+                  <span className="text-xs text-red-500 ml-auto">
+                    {errors[`${transaction.id}-description`]}
+                  </span>
+                )}
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Amount</span>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  className="flex-1 ml-4 p-2 border rounded-lg bg-white"
-                  value={transaction.amount || ''}
-                  onChange={(e) => handleTransactionChange(transaction.id!, 'amount', parseFloat(e.target.value))}
-                />
+
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Amount</span>
+                  <input
+                    type="number"
+                    placeholder="0.00"
+                    className={`flex-1 ml-4 p-2 border rounded-lg bg-white
+                      ${errors[`${transaction.id}-amount`] ? 'border-red-500' : 'border-gray-200'}`}
+                    value={transaction.amount || ''}
+                    onChange={(e) => {
+                      handleTransactionChange(transaction.id!, 'amount', parseFloat(e.target.value));
+                      if (errors[`${transaction.id}-amount`]) {
+                        setErrors(prev => ({
+                          ...prev,
+                          [`${transaction.id}-amount`]: ''
+                        }));
+                      }
+                    }}
+                  />
+                </div>
+                {errors[`${transaction.id}-amount`] && (
+                  <span className="text-xs text-red-500 ml-auto">
+                    {errors[`${transaction.id}-amount`]}
+                  </span>
+                )}
               </div>
+
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Category</span>
                 <select
                   className="flex-1 ml-4 p-2 border rounded-lg bg-white"
                   value={transaction.category?.name || ''}
-                  onChange={(e) => {
-                    const selectedCategory = Object.values(categoryDetails).find(
-                      cat => cat.name === e.target.value
-                    );
-                    if (selectedCategory) {
-                      handleTransactionChange(transaction.id!, 'category', {
-                        name: selectedCategory.name,
-                        icon: selectedCategory.subcategories[0].icon,
-                        color: selectedCategory.color.text.replace('text-', '').replace('-400', '')
-                      });
-                    }
-                  }}
+                  onChange={(e) => handleTransactionChange(transaction.id!, 'category', e.target.value)}
                 >
                   <option value="">Select Category</option>
-                  {Object.values(categoryDetails).map((category) => (
-                    <option key={category.name} value={category.name}>
-                      {category.name}
+                  {Object.keys(categoryConfig).map((categoryName) => (
+                    <option key={categoryName} value={categoryName}>
+                      {categoryName}
                     </option>
                   ))}
                 </select>

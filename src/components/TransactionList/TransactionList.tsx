@@ -3,19 +3,19 @@ import {
   CreditCard, User, Plus, Trash2, AlertCircle,
   ArrowDownCircle, ArrowUpCircle, X,
   Utensils, ShoppingCart, ShoppingBag,
-  Bus, Film, Bolt, Heart, Home, PiggyBank
+  Bus, Film, Bolt, Heart, Home, PiggyBank,Edit
 } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import '../../styles/global.css'
-import { Modal } from '../ui/Popup';
 import { Transaction } from '../../data/types/transaction';
 import { AddTransaction } from '../ui/addtransaction';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoadingAnimation } from '../ui/LoadingAnimation';
-import { TransactionListApi } from '../../api/TransactionListApi';
 import { useInView } from 'react-intersection-observer';
-
-
+import { useTransactions } from '../../hooks/useTransactions';
+import { EditTransaction } from '../ui/EditTransaction';
+import { DeleteTransaction } from '../ui/deleteTransaction';
+import { UndoDelete } from '../ui/undoDelete';
 
 export function TransactionList() {
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
@@ -28,15 +28,22 @@ export function TransactionList() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [swipeProgress, setSwipeProgress] = useState(0);
   const [swipedId, setSwipedId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { ref: loadMoreRef, inView } = useInView();
   const swipeThreshold = 80; // pixels needed to trigger delete
 
-  // Add check for mobile devices
+  const {
+    transactions,
+    isLoading,
+    error,
+    hasMore,
+    loadMore,
+    addTransaction,
+    deleteTransaction,
+    updateTransaction
+  } = useTransactions();
+
+  // check for mobile devices
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -48,56 +55,10 @@ export function TransactionList() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    fetchInitialTransactions();
-  }, []);
-
-  useEffect(() => {
-    if (inView && hasMore && !isLoadingMore) {
-      loadMoreTransactions();
+    if (inView && hasMore && !isLoading) {
+      loadMore();
     }
   }, [inView]);
-
-  const fetchInitialTransactions = async () => {
-    setIsLoading(true);
-    try {
-      const { transactions: newTransactions, hasMore: more } = await TransactionListApi.fetchTransactions(0);
-      setTransactions(newTransactions.map(t => ({
-        ...t,
-        date: new Date(t.date) // Ensure dates are properly instantiated
-      })));
-      setHasMore(more);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      setTransactions([]);
-      setHasMore(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadMoreTransactions = async () => {
-    if (isLoadingMore) return;
-    setIsLoadingMore(true);
-    try {
-      const nextPage = page + 1;
-      const { transactions: newTransactions, hasMore: more } = await TransactionListApi.fetchTransactions(nextPage);
-      setTransactions(prev => [...prev, ...newTransactions.map(t => ({
-        ...t,
-        date: new Date(t.date) // Ensure dates are properly instantiated
-      }))]);
-      setHasMore(more);
-      setPage(nextPage);
-    } catch (error) {
-      console.error('Error loading more transactions:', error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
 
   const handleTouchStart = (e: React.TouchEvent, id: string) => {
     if (!isMobile) return;
@@ -138,14 +99,20 @@ export function TransactionList() {
     setSwipeProgress(0);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     setDeleteConfirm(null);
     setDeletedIds(prev => [...prev, id]);
     
     if (undoTimeout) clearTimeout(undoTimeout);
-    const timeout = setTimeout(() => {
-      setDeletedIds(prev => prev.filter(itemId => itemId !== id));
-      // Actually delete the transaction here
+    const timeout = setTimeout(async () => {
+      try {
+        await deleteTransaction(id);
+        setDeletedIds(prev => prev.filter(itemId => itemId !== id));
+      } catch (error) {
+        console.error('Failed to delete transaction:', error);
+        // Show error toast
+        setDeletedIds(prev => prev.filter(itemId => itemId !== id));
+      }
     }, 5000);
     setUndoTimeout(timeout);
   };
@@ -155,10 +122,39 @@ export function TransactionList() {
     setDeletedIds(prev => prev.filter(itemId => itemId !== id));
   };
 
-  const handleSaveTransactions = (transactions: Partial<Transaction>[]) => {
-    // Here you would typically save to your backend
-    console.log('Saving transactions:', transactions);
-    setIsAddModalOpen(false);
+  const handleSaveTransactions = async (newTransactions: Partial<Transaction>[]) => {
+    try {
+      await Promise.all(newTransactions.map(transaction => addTransaction(transaction)));
+      setIsAddModalOpen(false);
+    } catch (error) {
+      // Error handling is now done in the hook
+      console.error('Failed to save transactions:', error);
+    }
+  };
+
+  const handleUpdateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    try {
+      await updateTransaction(id, updates);
+    } catch (error) {
+      console.error('Failed to update transaction:', error);
+      // Show error toast
+    }
+  };
+
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+  };
+
+  const handleSaveEdit = async (updates: Partial<Transaction>) => {
+    if (!editingTransaction) return;
+    
+    try {
+      await updateTransaction(editingTransaction.id, updates);
+      setEditingTransaction(null);
+    } catch (error) {
+      console.error('Failed to update transaction:', error);
+      // You might want to show an error toast here
+    }
   };
 
   const getCategoryIcon = (iconName: string) => {
@@ -202,6 +198,15 @@ export function TransactionList() {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-4">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 mr-2" />
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <LoadingAnimation />
@@ -270,12 +275,20 @@ export function TransactionList() {
                       {formatCurrency(transaction.amount)}
                     </p>
                     {showDeleteId === transaction.id && !isMobile && (
-                      <button 
-                        onClick={() => setDeleteConfirm(transaction.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => handleEdit(transaction)}
+                          className="p-2 text-gray-400 hover:text-blue-500 rounded-full hover:bg-blue-50 transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setDeleteConfirm(transaction.id)}
+                          className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -283,7 +296,7 @@ export function TransactionList() {
             ))}
             {hasMore && (
               <div ref={loadMoreRef} className="py-4 flex justify-center">
-                {isLoadingMore ? (
+                {isLoading ? (
                   <LoadingAnimation />
                 ) : (
                   <span className="text-gray-500">Scroll for more</span>
@@ -294,64 +307,12 @@ export function TransactionList() {
         </AnimatePresence>
       )}
 
-      <Modal
+      <DeleteTransaction
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
-        title="Delete Transaction"
-      >
-        {deleteConfirm && transactions.find(t => t.id === deleteConfirm) && (
-          <>
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center
-                  bg-${transactions.find(t => t.id === deleteConfirm)?.category.color}-50 
-                  text-${transactions.find(t => t.id === deleteConfirm)?.category.color}-600`}>
-                  {getCategoryIcon(transactions.find(t => t.id === deleteConfirm)?.category.icon || '')}
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {transactions.find(t => t.id === deleteConfirm)?.description}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {transactions.find(t => t.id === deleteConfirm)?.category.name}
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Amount:</span>
-                <span className="font-medium">
-                  {formatCurrency(transactions.find(t => t.id === deleteConfirm)?.amount || 0)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Date:</span>
-                <span className="font-medium">
-                  {transactions.find(t => t.id === deleteConfirm)?.date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </span>
-              </div>
-            </div>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this transaction?</p>
-            <div className="flex justify-end gap-3">
-              <button
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                onClick={() => setDeleteConfirm(null)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                onClick={() => handleDelete(deleteConfirm)}
-              >
-                Delete
-              </button>
-            </div>
-          </>
-        )}
-      </Modal>
+        onDelete={handleDelete}
+        transaction={transactions.find(t => t.id === deleteConfirm)}
+      />
 
       <AddTransaction
         isOpen={isAddModalOpen}
@@ -359,25 +320,20 @@ export function TransactionList() {
         onSave={handleSaveTransactions}
       />
 
-      {/* Undo Toast */}
-      {deletedIds.length > 0 && (
-        <div className="fixed bottom-4 right-4 left-4 md:left-auto md:w-96 bg-gray-800 text-white p-4 rounded-lg shadow-lg flex items-center justify-between z-50">
-          <span>Transaction deleted</span>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => handleUndo(deletedIds[deletedIds.length - 1])}
-              className="text-blue-400 hover:text-blue-300 font-medium"
-            >
-              Undo
-            </button>
-            <button
-              onClick={() => setDeletedIds([])}
-              className="text-gray-400 hover:text-gray-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+      <UndoDelete
+        deletedIds={deletedIds}
+        onUndo={handleUndo}
+        onClose={() => setDeletedIds([])}
+      />
+
+      {/* Add EditTransaction modal */}
+      {editingTransaction && (
+        <EditTransaction
+          isOpen={!!editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onSave={handleSaveEdit}
+          transaction={editingTransaction}
+        />
       )}
     </motion.div>
   );

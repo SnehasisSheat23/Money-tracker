@@ -1,27 +1,29 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Expense } from '../data/types/expense';
 import { ExpenseGroup } from './ExpenseGroup';
-import { mockTransactions } from '../data/mockTransactions';
+import { useTransactions } from '../hooks/useTransactions';
+import { LoadingAnimation } from '../components/ui/LoadingAnimation';
 
 export const ExpenseList: React.FC = () => {
-  // Flatten and combine all transactions
-  const allExpenses = Object.values(mockTransactions).flat();
+  const { transactions, isLoading, error } = useTransactions();
+
+  if (isLoading) {
+    return <LoadingAnimation />;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
 
   // Group expenses by date
-  const groupedExpenses = allExpenses.reduce((groups: { [key: string]: Expense[] }, expense) => {
-    const dateKey = format(expense.date, 'yyyy-MM-dd');
+  const groupedExpenses = transactions.reduce((groups: { [key: string]: any[] }, transaction) => {
+    const dateKey = format(transaction.date, 'yyyy-MM-dd');
     if (!groups[dateKey]) {
       groups[dateKey] = [];
     }
-    groups[dateKey].push(expense);
+    groups[dateKey].push(transaction);
     return groups;
   }, {});
-
-  const handleAddExpense = (date: Date, expenseData: Partial<Expense>) => {
-    // Add your expense creation logic here
-    console.log('New expense:', { date, ...expenseData });
-  };
 
   return (
     <div>
@@ -35,10 +37,9 @@ export const ExpenseList: React.FC = () => {
               date={new Date(dateKey)}
               expenses={expenses}
               totalAmount={totalAmount}
-              onAddExpense={handleAddExpense}
             />
           );
-      })}
+        })}
     </div>
   );
 };

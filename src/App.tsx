@@ -14,6 +14,7 @@ import { OTPVerification } from './pages/Landing/OTPVerification';
 
 // Data
 import { mockCategories } from './data/mockCategories';
+import { TransactionsProvider } from './hooks/useTransactions';
 
 /**
  * App Component
@@ -32,28 +33,30 @@ function App() {
   }
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth/phone" element={<PhoneAuth />} />
-            <Route path="/auth/otp" element={<OTPVerification />} />
-            <Route path="/dashboard/*" element={<Dashboard />} />
-            <Route path="/transactions" element={<TransactionsPage />} />
-            <Route 
-              path="/transactions/category/:categoryId" 
-              element={<TransactionPage categories={mockCategories} />} 
-            />
-          </Routes>
-        </BrowserRouter>
-      </motion.div>
-    </AnimatePresence>
+    <TransactionsProvider>
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth/phone" element={<PhoneAuth />} />
+              <Route path="/auth/otp" element={<OTPVerification />} />
+              <Route path="/dashboard/*" element={<Dashboard />} />
+              <Route path="/transactions" element={<TransactionsPage />} />
+              <Route 
+                path="/transactions/category/:categoryId" 
+                element={<TransactionPage categories={mockCategories} />} 
+              />
+            </Routes>
+          </BrowserRouter>
+        </motion.div>
+      </AnimatePresence>
+    </TransactionsProvider>
   );
 }
 
