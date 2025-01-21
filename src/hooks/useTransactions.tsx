@@ -1,6 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Transaction } from '../data/types/transaction';
 import { TransactionListApi } from '../api/TransactionListApi';
+import debounce from 'lodash/debounce';
+
+// Cache implementation
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+interface CacheEntry {
+  data: Transaction[];
+  timestamp: number;
+}
+
+const cache: { [page: number]: CacheEntry } = {};
 
 interface TransactionsContextType {
   transactions: Transaction[];
@@ -10,7 +20,7 @@ interface TransactionsContextType {
   loadMore: () => Promise<void>;
   addTransaction: (transaction: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
-  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
+  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<Transaction>;
   refreshTransactions: () => Promise<void>;
 }
 
@@ -22,17 +32,49 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const loadingRef = useRef(false);
+
+  // Check cache validity
+  const isCacheValid = (page: number) => {
+    const entry = cache[page];
+    if (!entry) return false;
+    return Date.now() - entry.timestamp < CACHE_DURATION;
+  };
 
   const fetchTransactions = async (pageNum: number) => {
     try {
       setError(null);
+
+      if (isCacheValid(pageNum)) {
+        const cachedData = cache[pageNum];
+        if (pageNum === 0) {
+          setTransactions(cachedData.data);
+        } else {
+          // Merge new transactions with existing ones and group by date
+          setTransactions(prev => {
+            const combined = [...prev, ...cachedData.data];
+            return combined.sort((a, b) => b.date.getTime() - a.date.getTime());
+          });
+        }
+        return true;
+      }
+
       const { transactions: newTransactions, hasMore: more } = 
         await TransactionListApi.fetchTransactions(pageNum);
       
+      cache[pageNum] = {
+        data: newTransactions,
+        timestamp: Date.now()
+      };
+
       if (pageNum === 0) {
         setTransactions(newTransactions);
       } else {
-        setTransactions(prev => [...prev, ...newTransactions]);
+        // Merge and sort transactions
+        setTransactions(prev => {
+          const combined = [...prev, ...newTransactions];
+          return combined.sort((a, b) => b.date.getTime() - a.date.getTime());
+        });
       }
       
       setHasMore(more);
@@ -43,13 +85,19 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  const loadMore = async () => {
-    if (!hasMore || isLoading) return;
-    setIsLoading(true);
-    await fetchTransactions(page + 1);
-    setPage(prev => prev + 1);
-    setIsLoading(false);
-  };
+  // Debounced load more function
+  const debouncedLoadMore = useCallback(
+    debounce(async () => {
+      if (!hasMore || loadingRef.current) return;
+      loadingRef.current = true;
+      setIsLoading(true);
+      await fetchTransactions(page + 1);
+      setPage(prev => prev + 1);
+      setIsLoading(false);
+      loadingRef.current = false;
+    }, 300),
+    [page, hasMore]
+  );
 
   const refreshTransactions = async () => {
     setIsLoading(true);
@@ -64,9 +112,25 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
 
   const addTransaction = async (transaction: Partial<Transaction>) => {
     try {
+      // Optimistic update
+      const tempId = `temp-${Date.now()}`;
+      const optimisticTransaction = {
+        ...transaction,
+        id: tempId,
+        date: transaction.date || new Date(),
+      } as Transaction;
+
+      setTransactions(prev => [optimisticTransaction, ...prev]);
+
       const newTransaction = await TransactionListApi.createTransaction(transaction);
-      setTransactions(prev => [newTransaction, ...prev]);
+      
+      // Replace optimistic transaction with real one
+      setTransactions(prev => 
+        prev.map(t => t.id === tempId ? newTransaction : t)
+      );
     } catch (error) {
+      // Rollback on error
+      setTransactions(prev => prev.filter(t => !t.id.startsWith('temp-')));
       setError(error instanceof Error ? error.message : 'Failed to add transaction');
       throw error;
     }
@@ -84,15 +148,25 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
 
   const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
     try {
+      setError(null);
       const updatedTransaction = await TransactionListApi.updateTransaction(id, updates);
       setTransactions(prev => 
         prev.map(t => t.id === id ? updatedTransaction : t)
       );
+      return updatedTransaction;
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to update transaction');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update transaction';
+      setError(errorMessage);
       throw error;
     }
   };
+
+  // Clear cache when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.keys(cache).forEach(key => delete cache[Number(key)]);
+    };
+  }, []);
 
   return (
     <TransactionsContext.Provider value={{
@@ -100,7 +174,7 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
       isLoading,
       error,
       hasMore,
-      loadMore,
+      loadMore: debouncedLoadMore,
       addTransaction,
       deleteTransaction,
       updateTransaction,

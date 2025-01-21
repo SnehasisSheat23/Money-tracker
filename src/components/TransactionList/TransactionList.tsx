@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   CreditCard, User, Plus, Trash2, AlertCircle,
   ArrowDownCircle, ArrowUpCircle, X,
   Utensils, ShoppingCart, ShoppingBag,
   Bus, Film, Bolt, Heart, Home, PiggyBank,Edit
 } from 'lucide-react';
-import { formatCurrency } from '../../utils/formatters';
+import { moneySign } from '../../utils/formatters';
 import '../../styles/global.css'
 import { Transaction } from '../../data/types/transaction';
 import { AddTransaction } from '../ui/addtransaction';
@@ -16,6 +16,7 @@ import { useTransactions } from '../../hooks/useTransactions';
 import { EditTransaction } from '../ui/EditTransaction';
 import { DeleteTransaction } from '../ui/deleteTransaction';
 import { UndoDelete } from '../ui/undoDelete';
+import { AddButton } from '../ui/addbutton';
 
 export function TransactionList() {
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
@@ -29,7 +30,12 @@ export function TransactionList() {
   const [swipeProgress, setSwipeProgress] = useState(0);
   const [swipedId, setSwipedId] = useState<string | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const { ref: loadMoreRef, inView } = useInView();
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,  // Changed from 0.5 to 0
+    rootMargin: '200px', // Increased from 100px
+  });
   const swipeThreshold = 80; // pixels needed to trigger delete
 
   const {
@@ -54,11 +60,49 @@ export function TransactionList() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    if (inView && hasMore && !isLoading) {
-      loadMore();
+  const throttle = (func: Function, limit: number) => {
+    let inThrottle: boolean;
+    return function(...args: any[]) {
+      if (!inThrottle) {
+        func(...args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
     }
-  }, [inView]);
+  };
+
+  const loadMoreThrottleTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!hasMore || isLoading || isLoadingMore || loadMoreThrottleTimeout.current) return;
+
+    setIsLoadingMore(true);
+    
+    // Set throttle timeout
+    loadMoreThrottleTimeout.current = setTimeout(() => {
+      loadMoreThrottleTimeout.current = null;
+    }, 1000);
+
+    try {
+      await loadMore();
+    } catch (error) {
+      console.error('Error loading more transactions:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [hasMore, isLoading, isLoadingMore, loadMore]);
+
+  useEffect(() => {
+    if (inView) {
+      handleLoadMore();
+    }
+
+    return () => {
+      if (loadMoreThrottleTimeout.current) {
+        clearTimeout(loadMoreThrottleTimeout.current);
+      }
+    };
+  }, [inView, handleLoadMore]);
 
   const handleTouchStart = (e: React.TouchEvent, id: string) => {
     if (!isMobile) return;
@@ -158,17 +202,18 @@ export function TransactionList() {
   };
 
   const getCategoryIcon = (iconName: string) => {
+    const iconClasses = "w-4 h-4 stroke-[1.5]"; // Thinner, smaller icons
     switch (iconName) {
-      case 'utensils': return <Utensils className="w-6 h-6" />;
-      case 'shopping-cart': return <ShoppingCart className="w-6 h-6" />;
-      case 'shopping-bag': return <ShoppingBag className="w-6 h-6" />;
-      case 'bus': return <Bus className="w-6 h-6" />;
-      case 'film': return <Film className="w-6 h-6" />;
-      case 'bolt': return <Bolt className="w-6 h-6" />;
-      case 'heart': return <Heart className="w-6 h-6" />;
-      case 'home': return <Home className="w-6 h-6" />;
-      case 'piggy-bank': return <PiggyBank className="w-6 h-6" />;
-      default: return <CreditCard className="w-6 h-6" />;
+      case 'utensils': return <Utensils className={iconClasses} />;
+      case 'shopping-cart': return <ShoppingCart className={iconClasses} />;
+      case 'shopping-bag': return <ShoppingBag className={iconClasses} />;
+      case 'bus': return <Bus className={iconClasses} />;
+      case 'film': return <Film className={iconClasses} />;
+      case 'bolt': return <Bolt className={iconClasses} />;
+      case 'heart': return <Heart className={iconClasses} />;
+      case 'home': return <Home className={iconClasses} />;
+      case 'piggy-bank': return <PiggyBank className={iconClasses} />;
+      default: return <CreditCard className={iconClasses} />;
     }
   };
 
@@ -185,17 +230,13 @@ export function TransactionList() {
             <h2 className="text-lg font-semibold text-slate-800">Recent Transactions</h2>
             <p className="text-xs text-slate-500 mt-1">daily transactions </p>
           </div>
-        <div className="flex gap-2 pr-2">
-          <button 
+        <div className="flex gap-2 pr-7">
+          <AddButton 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="text-sm font-medium">Add</span>
-          </button>
-          <button className="text-blue-600 text-sm font-medium p-2 hover:text-blue-700">
-            See All
-          </button>
+            text="Add"
+            className="!py-1.5 !px-3 !w-auto"
+          />
+          
         </div>
       </div>
 
@@ -257,9 +298,31 @@ export function TransactionList() {
                   onMouseLeave={() => !isMobile && setShowDeleteId(null)}
                 >
                   <div className="flex items-center flex-1">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center
-                      bg-${transaction.category.color}-50 text-${transaction.category.color}-600`}>
-                      {getCategoryIcon(transaction.category.icon)}
+                    <div className={`
+                      w-10 h-10 
+                      rounded-lg 
+                      flex items-center justify-center 
+                      bg-opacity-10 
+                      transition-all 
+                      duration-200
+                      ${transaction.category.color === 'blue' ? 'bg-[#0066FF]' : ''}
+                      ${transaction.category.color === 'green' ? 'bg-[#00875A]' : ''}
+                      ${transaction.category.color === 'purple' ? 'bg-[#6554C0]' : ''}
+                      ${transaction.category.color === 'orange' ? 'bg-[#FF991F]' : ''}
+                      ${transaction.category.color === 'red' ? 'bg-[#FF5630]' : ''}
+                    `}>
+                      <div className={`
+                        p-2 
+                        rounded-md 
+                        transition-colors
+                        ${transaction.category.color === 'blue' ? 'text-[#0066FF]' : ''}
+                        ${transaction.category.color === 'green' ? 'text-[#00875A]' : ''}
+                        ${transaction.category.color === 'purple' ? 'text-[#6554C0]' : ''}
+                        ${transaction.category.color === 'orange' ? 'text-[#FF991F]' : ''}
+                        ${transaction.category.color === 'red' ? 'text-[#FF5630]' : ''}
+                      `}>
+                        {getCategoryIcon(transaction.category.icon)}
+                      </div>
                     </div>
                     <div className="ml-4 flex-1">
                       <h2 className="font-medium text-gray-900">{transaction.description}</h2>
@@ -272,7 +335,7 @@ export function TransactionList() {
                       </p>
                     </div>
                     <p className="font-medium mx-4 text-gray-900">
-                      {formatCurrency(transaction.amount)}
+                      {moneySign(transaction.amount)}
                     </p>
                     {showDeleteId === transaction.id && !isMobile && (
                       <div className="flex items-center gap-2">
@@ -294,12 +357,20 @@ export function TransactionList() {
                 </div>
               </motion.div>
             ))}
-            {hasMore && (
-              <div ref={loadMoreRef} className="py-4 flex justify-center">
-                {isLoading ? (
-                  <LoadingAnimation />
-                ) : (
-                  <span className="text-gray-500">Scroll for more</span>
+            {(hasMore || isLoadingMore) && (
+              <div 
+                ref={loadMoreRef} 
+                className="py-4 flex justify-center"
+              >
+                {isLoadingMore && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <LoadingAnimation />
+                  </motion.div>
                 )}
               </div>
             )}

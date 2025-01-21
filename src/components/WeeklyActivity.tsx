@@ -1,6 +1,6 @@
 import '../styles/global.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Rectangle } from 'recharts';
-
+import { moneySign } from '../utils/formatters';
 // Types
 interface WeeklyData {
   day: string;
@@ -33,15 +33,15 @@ const CHART_CONFIG = {
   animationDuration: 1000,
   colors: {
     deposit: {
-      start: '#0b84ff', // slate-700
-      end: '#0b84ff'   // slate-600
+      start: '#0066FF', 
+      end: '#0052CC'   
     },
     withdraw: {
-      start: 'rgba(156, 175, 201, 0.95)', // slate-400
-      end: 'rgba(166, 184, 207, 0.85)'    // slate-300
+      start: 'rgba(156, 175, 201, 0.95)', 
+      end: 'rgba(166, 184, 207, 0.85)'    
     }
   },
-  gridColor: 'rgba(226, 232, 240, 0.6)' // slate-200
+  gridColor: 'rgba(226, 232, 240, 0.6)' 
 };
 
 const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
@@ -54,20 +54,20 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
         <div className="flex items-center justify-between gap-8">
           <span className="text-xs font-medium text-slate-600">Inflow</span>
           <span className="text-xs font-semibold text-slate-800">
-            ${payload[0]?.value.toLocaleString()}
+            {moneySign(payload[0]?.value.toLocaleString())}
           </span>
         </div>
         <div className="flex items-center justify-between gap-8">
           <span className="text-xs font-medium text-slate-600">Outflow</span>
           <span className="text-xs font-semibold text-slate-800">
-            ${payload[1]?.value.toLocaleString()}
+            {moneySign(payload[1]?.value.toLocaleString())}
           </span>
         </div>
         <div className="pt-2 border-t border-slate-100">
           <div className="flex items-center justify-between gap-8">
             <span className="text-xs font-medium text-slate-700">Net Flow</span>
             <span className="text-xs font-semibold text-slate-900">
-              ${(payload[0]?.value - payload[1]?.value).toLocaleString()}
+              {moneySign((payload[0]?.value - payload[1]?.value).toLocaleString())}
             </span>
           </div>
         </div>
@@ -127,11 +127,11 @@ export function WeeklyActivity() {
         </div>
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-sm bg-[#0b84ff]" />
+            <div className="w-3 h-3 rounded-full bg-[#0066FF]" />
             <span className="text-xs font-medium text-slate-600">Cash Inflow</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-sm bg-slate-400" />
+            <div className="w-3 h-3 rounded-full bg-slate-400" />
             <span className="text-xs font-medium text-slate-600">Cash Outflow</span>
           </div>
         </div>
@@ -169,7 +169,7 @@ export function WeeklyActivity() {
                 fontSize: 12,
                 fontWeight: 500
               }}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => `${moneySign(value)}`}
               width={50}
             />
             <Tooltip 

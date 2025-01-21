@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from 'react';
-import { Category } from '../data/types/expense';
-import { iconMap } from '../data/utils/icons';
+import { Category } from '../../data/types/expense';
+import { iconMap } from '../../data/utils/icons';
 
 const BASE_BUTTON_CLASSES = "flex-shrink-0 px-4 py-2 rounded-full border transition-all";
 const SELECTED_CLASSES = "bg-blue-500 text-white border-blue-500";

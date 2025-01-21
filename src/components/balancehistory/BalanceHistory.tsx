@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { LoadingAnimation } from './ui/LoadingAnimation';
-import { TREND_COLORS } from '../data/utils/colors';
+import { LoadingAnimation } from './../ui/LoadingAnimation';
+import { TREND_COLORS } from '../../data/utils/colors';
 
 // Types
 interface Point {
@@ -13,7 +13,6 @@ interface Point {
 const MONTHS = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'];
 const BALANCE_DATA = [200, 300, 450, 700, 300, 400, 100];
 
-// Helper functions
 const calculateTrend = (data: number[]): 'up' | 'down' => {
   const firstHalf = data.slice(0, Math.floor(data.length / 2));
   const secondHalf = data.slice(Math.floor(data.length / 2));
@@ -48,7 +47,7 @@ export function BalanceHistory() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white p-6 rounded-xl"
+      className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm "
     >
       <h2 className="text-xl font-semibold mb-6 text-gray-800">Balance History</h2>
       

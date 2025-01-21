@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
-import { CategoryGrid } from '../Transactions/CategoryGrid.tsx';
+import { CategoryGrid } from '../Transactions/category/CategoryGrid';
 import { ExpenseList } from '../Transactions/ExpenseList.tsx';
 import { ViewSelector } from '../Transactions/ViewSelector';
 import { ViewMode } from '../data/types/expense';
@@ -10,7 +10,7 @@ import { CreditCard } from 'lucide-react';
 import { MobileNav } from '../components/MobileNav';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { CategorySelector } from '../Transactions/Categoryselector';
+import { CategorySelector } from '../Transactions/category/Categoryselector';
 
 export const TransactionsPage: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewMode>('Daily');
@@ -72,7 +72,7 @@ export const TransactionsPage: React.FC = () => {
                   damping: 30,
                   mass: 0.8
                 }}
-                className="bg-white border-b border-gray-200 shadow-sm  overflow-hidden"
+                className="bg-white border-b border-gray-200 shadow-sm  overflow-hidden "
               >
                 <CategorySelector
                   categories={mockCategories}

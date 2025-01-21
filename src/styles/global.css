@@ -176,3 +176,141 @@ html {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;            /* Chrome, Safari and Opera */
 }
+
+/* Circular Progress Animations */
+@keyframes progress {
+  from {
+    stroke-dashoffset: var(--circumference, 0);
+  }
+  to {
+    stroke-dashoffset: var(--final-offset, 0);
+  }
+}
+
+.circular-progress {
+  --circumference: 0;
+  --final-offset: 0;
+  transition: stroke-dashoffset 1s ease-out;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.circle-group {
+  transition: transform 0.3s ease-in-out, filter 0.3s ease-in-out;
+  isolation: isolate;
+  transform-origin: center;
+}
+
+.circle-group:hover {
+  transform: scale(1.02);
+}
+
+.circle-group:nth-child(1) { animation-delay: 0s; }
+.circle-group:nth-child(2) { animation-delay: 0.1s; }
+.circle-group:nth-child(3) { animation-delay: 0.2s; }
+.circle-group:nth-child(4) { animation-delay: 0.3s; }
+.circle-group:nth-child(5) { animation-delay: 0.4s; }
+.circle-group:nth-child(6) { animation-delay: 0.5s; }
+.circle-group:nth-child(7) { animation-delay: 0.6s; }
+.circle-group:nth-child(8) { animation-delay: 0.7s; }
+.circle-group:nth-child(9) { animation-delay: 0.8s; }
+.circle-group:nth-child(10) { animation-delay: 0.9s; }
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.chart-container {
+  overflow: visible;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
+}
+
+.circle-hover {
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.2));
+}
+
+.tooltip-text {
+  font-family: 'Inter', sans-serif;
+  transform-origin: center;
+}
+
+.tooltip-category {
+  font-size: 12px;
+  fill: #6B7280;
+  font-weight: 500;
+}
+
+.tooltip-amount {
+  font-size: 14px;
+  fill: #1F2937;
+  font-weight: 600;
+}
+
+.tooltip-percentage {
+  font-size: 14px;
+  fill: #3B82F6;
+  font-weight: 600;
+  text-anchor: end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circular-progress {
+    transition: none;
+  }
+}
+
+/* Smooth animations */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) rotate(var(--start-angle));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Apple Watch-style progress bar */
+.circle-group path {
+  transition: all 0.3s ease;
+}
+
+.circle-group:hover path {
+  filter: brightness(1.1);
+}
+
+/* Glossy effect */
+.progress-glossy {
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+/* Smooth animation for progress bars */
+@keyframes progress-grow {
+  from {
+    stroke-dasharray: 0 100;
+  }
+  to {
+    stroke-dasharray: var(--percentage) 100;
+  }
+}
+
+.circle-group path {
+  animation: progress-grow 1.5s ease-out forwards;
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { TransactionTable } from '../TransactionTable';
+import { TransactionTable } from '../category/TransactionTable';
 import { iconMap } from '../../data/utils/icons';
 import { Category } from '../../data/types/expense';
 

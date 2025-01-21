@@ -204,37 +204,55 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onUpdate, editingCell,
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
 
-  // Debounced update function
-  const debouncedUpdate = useCallback(
-    debounce((updates: Partial<Expense>) => {
-      onUpdate(expense.id, updates);
-    }, 500),
-    [expense.id, onUpdate]
-  );
-
   const handleChange = (field: string, value: string) => {
+    // Validate input before updating
+    let isValid = true;
+    let sanitizedValue = value;
+
+    switch (field) {
+      case 'description':
+        isValid = value.length <= 100 && value.length > 0;
+        break;
+      case 'category':
+        isValid = Object.keys(categoryConfig).includes(value);
+        break;
+      case 'amount':
+        sanitizedValue = value.replace(/[^\d.-]/g, '');
+        const numValue = parseFloat(sanitizedValue);
+        isValid = !isNaN(numValue) && numValue > 0;
+        break;
+    }
+
+    if (!isValid) {
+      console.warn('Invalid input:', { field, value });
+      return;
+    }
+
     setData(prev => {
-      const newData = { ...prev, [field]: value };
+      const newData = { ...prev, [field]: sanitizedValue };
       
       // Prepare updates
-      const updates = {
-        description: newData.description,
-        category: { name: newData.category },
-        amount: parseFloat(newData.amount || '0')
-      };
+      const updates: Partial<Expense> = {};
+      
+      if (field === 'description' && newData.description !== expense.description) {
+        updates.description = newData.description;
+      } else if (field === 'category' && newData.category !== expense.category.name) {
+        updates.category = { name: newData.category };
+      } else if (field === 'amount') {
+        const amount = parseFloat(newData.amount);
+        if (!isNaN(amount) && amount !== expense.amount) {
+          updates.amount = amount;
+        }
+      }
 
-      // Only trigger update if values actually changed
-      if (
-        updates.description !== expense.description ||
-        updates.category.name !== expense.category.name ||
-        updates.amount !== expense.amount
-      ) {
-        debouncedUpdate(updates);
+      // Only trigger update if we have valid changes
+      if (Object.keys(updates).length > 0) {
+        // Immediately call update instead of debouncing
+        onUpdate(expense.id, updates);
       }
 
       return newData;
     });
-    setHasChanges(true);
   };
 
   const isEditing = (field: 'description' | 'category' | 'amount') => 
@@ -244,27 +262,6 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onUpdate, editingCell,
     if (!isEditing(field)) {
       onStartEditing(expense.id, field);
     }
-  };
-
-  const handleUpdate = () => {
-    if (!hasChanges) return; // Skip update if no changes
-
-    const updates = {
-      description: data.description,
-      category: { name: data.category },
-      amount: parseFloat(data.amount)
-    };
-
-    // Only update if values actually changed
-    if (
-      updates.description !== expense.description ||
-      updates.category.name !== expense.category.name ||
-      updates.amount !== expense.amount
-    ) {
-      onUpdate(expense.id, updates);
-    }
-    
-    setHasChanges(false);
   };
 
   const handleDelete = async () => {
@@ -289,22 +286,26 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onUpdate, editingCell,
     setDeletedIds(prev => prev.filter(dId => dId !== id));
   };
 
+  function handleStopEditing(): void {
+    throw new Error('Function not implemented.');
+  }
+
   return (
     <>
       <div className="group grid grid-cols-12 border-b border-gray-100 hover:bg-gray-50 
       animate-fade-slide-down [animation-fill-mode:both] [animation-delay:var(--delay)]"
         style={{ '--delay': `${Math.random() * 200}ms` } as React.CSSProperties}
       >
-        <div className="col-span-5 px-1" onClick={() => handleCellClick('description')}>
+        <div className="col-span-5 px-1 truncate" onClick={() => handleCellClick('description')}>
           <EditableCell
             value={data.description}
             onChange={(value) => handleChange('description', value)}
-            onBlur={handleUpdate}
+            onBlur={handleStopEditing}
             isEditing={isEditing('description')}
             className="text-sm text-gray-800"
           />
         </div>
-        <div className="col-span-3 px-1">
+        <div className="col-span-3 px-1 truncate">
           <Select
             value={data.category}
             options={Object.keys(categoryConfig)}
@@ -320,7 +321,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onUpdate, editingCell,
             value={data.amount}
             type="number"
             onChange={(value) => handleChange('amount', value)}
-            onBlur={handleUpdate}
+            onBlur={handleStopEditing}
             isEditing={isEditing('amount')}
             className="text-sm text-right text-gray-900"
           />
@@ -387,26 +388,6 @@ export const ExpenseGroup: React.FC<ExpenseGroupProps> = ({
     }
   }, []);
 
-  // Batch updates
-  useEffect(() => {
-    if (Object.keys(updateQueue).length > 0) {
-      const timer = setTimeout(async () => {
-        try {
-          await Promise.all(
-            Object.entries(updateQueue).map(([id, updates]) => 
-              updateTransaction(id, updates)
-            )
-          );
-          setUpdateQueue({});
-        } catch (error) {
-          console.error('Failed to batch update expenses:', error);
-        }
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [updateQueue]);
-
   const handleStartEditing = (id: string, field: 'description' | 'category' | 'amount') => {
     setEditingCell({ id, field });
   };
@@ -438,11 +419,13 @@ export const ExpenseGroup: React.FC<ExpenseGroupProps> = ({
     }
   };
 
-  const handleUpdateExpense = (id: string, updates: Partial<Expense>) => {
-    setUpdateQueue(prev => ({
-      ...prev,
-      [id]: { ...prev[id], ...updates }
-    }));
+  const handleUpdateExpense = async (id: string, updates: Partial<Expense>) => {
+    try {
+      await updateTransaction(id, updates);
+    } catch (error) {
+      console.error('Failed to update expense:', error);
+      // Optionally, revert the UI state here
+    }
   };
 
   return (

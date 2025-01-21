@@ -1,23 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
 import { CreditCard, Menu } from 'lucide-react';
 import { Routes, Route } from 'react-router-dom';
-
+import { CardTitle } from '../components/Subscription/ui/card';
 // Component imports
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
 import { Card } from '../components/bankaccount/Card';
 import { TransactionList } from '../components/TransactionList/TransactionList';
 import { WeeklyActivity } from '../components/WeeklyActivity';
-import { ExpenseStats } from '../components/ExpenseStats';
-import { BalanceHistory } from '../components/BalanceHistory';
+import { ExpenseStats } from '../components/expenseStats/ExpenseStats';
+import { BalanceHistory } from '../components/balancehistory/BalanceHistory';
 import { AddCard } from '../components/bankaccount/AddCard';
 import { BankAccountModal } from '../components/bankaccount/BankAccountModal';
-import { BalanceCard } from '../components/BalanceCard';
+import { BalanceCard } from '..//components/balancecard/BalanceCard';
 import { ScrollButton } from '../components/ScrollButton';
 import { TransactionsPage } from './TransactionsPage';
 import { TransactionPage } from '../Transactions/pages/FullTransactionPage';
 import { mockCategories } from '../data/mockCategories';
 import { MobileNav } from '../components/MobileNav';
+import { SubscriptionManager } from '../components/Subscription/SubscriptionManager';
 
 /**
  * Types for managing financial data cards
@@ -159,178 +160,151 @@ export function Dashboard() {
   };
 
   return (
-    <div className="flex h-[100dvh] bg-[#f5f5f7] overflow-hidden">
-      {/* Sidebar with overlay */}
-      <div 
-        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-20 transition-opacity md:hidden ${
-          sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setSidebarOpen(false)}
-      />
-      
+    <div className="flex h-[100dvh] bg-gray-50 overflow-hidden">
       {/* Sidebar */}
-      <div className={`fixed md:relative md:block z-50 transition-transform duration-300 ease-in-out ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      }`}>
+      <aside className={`
+        fixed inset-y-0 left-0 z-40 w-64 bg-white
+        transition-transform duration-300 border-r border-gray-200
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0 md:relative
+      `}>
         <Sidebar onClose={() => setSidebarOpen(false)} />
-      </div>
+      </aside>
 
-      {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col w-full relative">
-        {/* Fixed Header */}
-        <div 
-          className="fixed inset-x-0 top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-gray-200/50"
-          style={{ 
-            paddingTop: 'max(env(safe-area-inset-top), 8px)',
-            height: 'calc(max(env(safe-area-inset-top), 8px) + 48px)',
-            boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)'
-          }}
-        >
-          <div className="h-12">
-            <Header>
-              <div className="md:hidden flex items-center">
-                <CreditCard className="w-6 h-6 text-[#0b84ff]-600" />
-                <span className="ml-2 font-bold text-[#0b84ff]">Moneytrack.</span>
-              </div>
-              <button 
-                className="hidden md:block p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-            </Header>
-          </div>
-        </div>
+      {/* Main Content Container */}
+      <div className="flex-1 flex flex-col w-full md:w-[calc(100%-16rem)] relative">
+        {/* Header */}
+        <header className="h-14 flex items-center bg-white border-b border-gray-200 px-4 sticky top-0 z-30">
+          <Header>
+            <div className="md:hidden flex items-center">
+              <CreditCard className="w-5 h-5 text-primary" />
+              <span className="ml-2 font-bold text-primary">Moneytrack.</span>
+            </div>
+          </Header>
+        </header>
 
         {/* Scrollable Content Area */}
-        <main 
-          className="flex-1 overflow-y-auto overscroll-y-contain md:pb-0 bg-gradient-to-b from-slate-50/80 to-white/90"
-          style={{
-            paddingTop: 'calc(max(env(safe-area-inset-top), 26px) + 48px)',
-            minHeight: '100%',
-            height: '100dvh',
-            WebkitOverflowScrolling: 'touch',
-            paddingBottom: window.innerWidth <= 768 ? 'calc(env(safe-area-inset-bottom) + 80px)' : '0px',
-          }}
-        >
-          <div className="min-h-full">
-            <Routes>
-              <Route path="/" element={
-                <div className="p-3 md:p-6 lg:p-8">
-                  {/* Dashboard Grid Layout */}
-                  <div className="max-w-[1920px] mx-auto md:pb-0">
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 md:gap-6 xl:gap-8">
-                      {/* Left Column - Financial Overview */}
-                      <div className="xl:col-span-2 space-y-3 md:space-y-4 xl:space-y-6">
-                        {/* Balance Cards Grid */}
-                        <div className="bg-transparent rounded-2xl">
-                          {/* Balance Cards */}
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 xl:gap-6 mb-4 md:mb-6">
-                            {balanceCards.map((card, index) => (
-                              <BalanceCard 
-                                key={`balance-${index}`}
-                                amount={card.amount}
-                                title={card.title}
-                                variant={card.variant}
-                              />
-                            ))}
-                          </div>
+        <main className="flex-1 overflow-y-auto overscroll-y-contain relative bg-gray-50">
+          <Routes>
+            <Route path="/" element={
+              <div className="pb-20 md:pb-6"> {/* Added padding for mobile nav */}
+                <div className="p-4 md:p-6 max-w-[1920px] mx-auto">
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6">
+                    {/* Left Column - Main Content */}
+                    <div className="xl:col-span-8 space-y-4 md:space-y-6">
+                      {/* Balance Cards Row */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+                        {balanceCards.map((card, index) => (
+                          <BalanceCard 
+                            key={`balance-${index}`}
+                            amount={card.amount}
+                            title={card.title}
+                            variant={card.variant}
+                          />
+                        ))}
+                      </div>
 
-                          {/* Bank Account Cards Section */}
-                          <div className="mb-3 md:mb-4 xl:mb-6">
-                            <div className="flex items-center justify-between mb-3 md:mb-4 xl:mb-5">
-                              <h2 className="text-base md:text-lg xl:text-xl font-semibold text-gray-800 pl-3">
-                                Bank Accounts
-                              </h2>
-                              <select className="text-xs md:text-sm xl:text-base border border-gray-200 rounded-lg px-2 py-1 md:px-3 md:py-1.5 bg-white">
-                                <option>All Accounts</option>
-                                <option>Savings</option>
-                                <option>Checking</option>
-                                <option>Credit Cards</option>
-                              </select>
-                            </div>
-                            <div className="relative">
-                              <div 
-                                ref={scrollContainerRef}
-                                className="overflow-x-auto scrollbar-hide scroll-smooth overscroll-x-contain touch-pan-x"
-                                style={{
-                                  WebkitOverflowScrolling: 'touch',
-                                  scrollSnapType: 'x mandatory',
-                                  padding: '0.5rem',
-                                  margin: '-0.5rem',
-                                }}
-                              >
-                                <div className="flex gap-3 md:gap-4 xl:gap-6">
-                                  {bankCards.map((card, index) => (
-                                    <div 
-                                      key={`bank-${index}`} 
-                                      className="flex-none w-[160px] sm:w-[200px] md:w-[250px] xl:w-[300px] scroll-snap-align-start"
-                                      style={{ padding: '0.5rem' }}
-                                    >
-                                      <Card 
-                                        {...card} 
-                                        onClick={() => setSelectedBank(card)} 
-                                      />
-                                    </div>
-                                  ))}
-                                  <div className="flex-none w-[160px] sm:w-[200px] md:w-[250px] xl:w-[300px]" style={{ padding: '0.5rem' }}>
-                                    <AddCard onClick={handleAddBankCard} />
-                                  </div>
+                      {/* Bank Account Section */}
+                      <div className="">
+                        <div className="flex items-center justify-between mb-3 md:mb-4 xl:mb-5">
+                          <h2 className="text-base md:text-lg xl:text-xl font-semibold text-gray-800 pl-3">
+                            Bank Accounts
+                          </h2>
+                          <select className="text-xs md:text-sm xl:text-base border border-gray-200 rounded-lg px-2 py-1 md:px-3 md:py-1.5 bg-white">
+                            <option>All Accounts</option>
+                            <option>Savings</option>
+                            <option>Checking</option>
+                            <option>Credit Cards</option>
+                          </select>
+                        </div>
+                        <div className="relative">
+                          <div 
+                            ref={scrollContainerRef}
+                            className="overflow-x-auto scrollbar-hide scroll-smooth overscroll-x-contain touch-pan-x"
+                            style={{
+                              WebkitOverflowScrolling: 'touch',
+                              scrollSnapType: 'x mandatory',
+                              padding: '0.5rem',
+                              margin: '-0.5rem',
+                            }}
+                          >
+                            <div className="flex gap-3 md:gap-4 xl:gap-6">
+                              {bankCards.map((card, index) => (
+                                <div 
+                                  key={`bank-${index}`} 
+                                  className="flex-none w-[160px] sm:w-[200px] md:w-[250px] xl:w-[300px] scroll-snap-align-start"
+                                  style={{ padding: '0.5rem' }}
+                                >
+                                  <Card 
+                                    {...card} 
+                                    onClick={() => setSelectedBank(card)} 
+                                  />
                                 </div>
+                              ))}
+                              <div className="flex-none -item-centre w-[160px] sm:w-[200px] md:w-[250px] xl:w-[300px]" style={{ padding: '0.5rem' }}>
+                                
+                                <AddCard  onClick={handleAddBankCard} />
+                                
                               </div>
-                              {/* Only show scroll buttons when content overflows */}
-                              {canScroll && (
-                                <>
-                                  <ScrollButton 
-                                    direction="left" 
-                                    onClick={() => handleScroll('left')} 
-                                  />
-                                  <ScrollButton 
-                                    direction="right" 
-                                    onClick={() => handleScroll('right')} 
-                                  />
-                                </>
-                              )}
                             </div>
                           </div>
-                        </div>
-                        
-                        {/* Charts Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 xl:gap-6 overflow-hidden">
-                          <div className="lg:col-span-1">
-                            <WeeklyActivity />
-                          </div>
-                          <div className="lg:col-span-1">
-                            <ExpenseStats />
-                          </div>
+                          {/* Only show scroll buttons when content overflows */}
+                          {canScroll && (
+                            <>
+                              <ScrollButton 
+                                direction="left" 
+                                onClick={() => handleScroll('left')} 
+                              />
+                              <ScrollButton 
+                                direction="right" 
+                                onClick={() => handleScroll('right')} 
+                              />
+                            </>
+                          )}
                         </div>
                       </div>
-                      
-                      {/* Right Column - Transactions */}
-                      <div className="space-y-3 md:space-y-4 xl:space-y-6">
-                        <TransactionList />
-                        <BalanceHistory />
+
+                      {/* Charts Section */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <SubscriptionManager />
+                        <ExpenseStats />
                       </div>
+                    </div>
+
+                    {/* Right Column - Transactions */}
+                    <div className="xl:col-span-4 space-y-6">
+                      <TransactionList />
+                      <WeeklyActivity />
+                      <BalanceHistory />
                     </div>
                   </div>
                 </div>
-              } />
-
-              {/* Additional Routes */}
-              <Route path="/transactions" element={<TransactionsPage />} />
-              <Route 
-                path="/transactions/category/:categoryId" 
-                element={<TransactionPage categories={mockCategories} />} 
-              />
-            </Routes>
-          </div>
+              </div>
+            } />
+            {/* Additional Routes */}
+            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route 
+              path="/transactions/category/:categoryId" 
+              element={<TransactionPage categories={mockCategories} />} 
+            />
+          </Routes>
         </main>
-        
-        {/* Add Mobile Navigation */}
-        <MobileNav />
+
+        {/* Mobile Navigation - Fixed at bottom */}
+        <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-gray-200">
+          <MobileNav />
+        </div>
       </div>
 
-      {/* Modals */}
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Bank Account Modal */}
       <BankAccountModal
         isOpen={selectedBank !== null}
         onClose={() => setSelectedBank(null)}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, Wallet, PiggyBank } from 'lucide-react';
-
+import { CreditCard, Wallet, PiggyBank, CircleDot,Nfc } from 'lucide-react';
+import { moneySign } from '../../utils/formatters';
 interface BankCardProps {
   bankName: string;
   accountType: 'savings' | 'checking' | 'credit';
@@ -11,9 +11,24 @@ interface BankCardProps {
 }
 
 const variantStyles = {
-  'pastel-blue': 'bg-gradient-to-br from-[#4475F2] via-[#4CA7F8] to-[#67B3F9]',
-  'pastel-green': 'bg-gradient-to-br from-[#3ECF7A] via-[#41D6AA] to-[#47E4C3]',
-  'pastel-purple': 'bg-gradient-to-br from-[#9182F2] via-[#A385F0] to-[#B590EF]',
+  'pastel-blue': {
+    gradient: 'from-blue-500/5 to-blue-500/10',
+    border: 'border-blue-200/50',
+    glow: 'shadow-[0_4px_20px_-4px_rgba(59,130,246,0.1)]',
+    accent: 'bg-blue-500'
+  },
+  'pastel-green': {
+    gradient: 'from-emerald-500/5 to-emerald-500/10',
+    border: 'border-emerald-200/50',
+    glow: 'shadow-[0_4px_20px_-4px_rgba(16,185,129,0.1)]',
+    accent: 'bg-emerald-500'
+  },
+  'pastel-purple': {
+    gradient: 'from-purple-500/5 to-purple-500/10',
+    border: 'border-purple-200/50',
+    glow: 'shadow-[0_4px_20px_-4px_rgba(168,85,247,0.1)]',
+    accent: 'bg-purple-500'
+  }
 };
 
 const accountTypeIcons = {
@@ -24,59 +39,83 @@ const accountTypeIcons = {
 
 export function Card({ bankName, accountType, balance, variant, onClick }: BankCardProps) {
   const Icon = accountTypeIcons[accountType || 'checking'];
+  const styles = variantStyles[variant];
 
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        type: "spring",
-        stiffness: 500,
-        damping: 30,
-        duration: 0.3
-      }}
       onClick={onClick}
-      className={`relative rounded-2xl p-5 sm:p-6 ${variantStyles[variant]} 
-        cursor-pointer transition-all duration-300 hover:shadow-2xl h-[180px] sm:h-[220px] 
-        min-w-[280px] overflow-hidden backdrop-blur-xl`}
+      className={`relative h-[130px] sm:h-[160px] rounded-xl sm:rounded-2xl p-3 sm:p-5 cursor-pointer
+        border ${styles.border} backdrop-blur-sm
+        bg-gradient-to-br ${styles.gradient}
+        transition-all duration-300 overflow-hidden group ${styles.glow}`}
     >
-      {/* Decorative patterns */}
-      <div className="absolute inset-0 w-full h-full opacity-50">
-        <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/10 blur-xl" />
-        <div className="absolute -left-4 -bottom-4 w-32 h-32 rounded-full bg-black/10 blur-xl" />
+      {/* Modern Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent" />
+      
+      {/* Decorative Lines */}
+      <div className="absolute -right-4 -top-4 w-24 h-24 blur-3xl opacity-20 rounded-full bg-current" />
+      <div className="absolute right-0 bottom-0 w-32 h-32 opacity-[0.02]">
+        <div className="absolute inset-0 rotate-12 scale-150">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-px w-full bg-current my-6" />
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-col h-full text-white relative z-10">
-        {/* Bank logo and type */}
-        <div className="flex items-center justify-between">
-          <div className="bg-white/20 backdrop-blur-md rounded-xl p-2">
-            <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
-          </div>
-          <div className="w-12 h-8 sm:w-14 sm:h-10">
-            <div className="relative w-full h-full">
-              <div className="absolute inset-0 bg-yellow-300/90 rounded-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 20% 50%)' }}>
-                <div className="absolute inset-1 border border-yellow-600/30 rounded-sm" />
+      <div className="relative z-10 flex flex-col h-full justify-between">
+        {/* Card Header */}
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl 
+                bg-gradient-to-br from-white/80 to-white/40
+                flex items-center justify-center border ${styles.border} shadow-sm`}>
+                <Icon className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-600`} />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">{bankName}</p>
+                <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5">
+                  <CircleDot className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-green-500" />
+                  <span className="text-[10px] sm:text-xs text-gray-500 capitalize">{accountType}</span>
+                </div>
               </div>
             </div>
+            <Nfc className="w-10 h-10 sm:w-3 sm:h-3 text-yellow-500" />
           </div>
         </div>
 
-        {/* Bank name and account type */}
-        <div className="mt-4 sm:mt-6">
-          <p className="text-lg sm:text-xl font-bold tracking-wide">{bankName}</p>
-          <p className="text-sm text-white/80 mt-0.5 tracking-wide font-medium">
-            {accountType?.charAt(0).toUpperCase() + accountType?.slice(1)}
-          </p>
-        </div>
-        
-        {/* Balance */}
-        <div className="mt-auto">
-          <p className="text-sm text-white/80 mb-1 font-medium">Available Balance</p>
-          <p className="text-2xl sm:text-3xl font-bold tracking-tight">
-            ${balance}
-          </p>
+        {/* Card Content & Footer */}
+        <div className="space-y-2 sm:space-y-3">
+          {/* Balance Display */}
+          <div>
+            
+            <p className="text-lg sm:text-2xl font-semibold tracking-tight mt-2 pt-0 sm:pt-4">
+              {moneySign(Number(balance).toLocaleString())}
+            </p>
+          </div>
+
+          {/* Card Number Preview */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex gap-[1px] sm:gap-[2px]">
+                  {[...Array(3)].map((_, j) => (
+                    <span key={j} 
+                      className={`w-0.5 h-0.5 rounded-full 
+                        ${i === 3 ? 'bg-gray-400' : 'bg-gray-300'}`} 
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+            
+            <div className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[8px] sm:text-[10px] font-medium
+              uppercase tracking-wider ${styles.gradient} border ${styles.border}`}>
+              {accountType === 'credit' ? 'Credit' : 'Debit'}
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>
